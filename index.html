@@ -81,14 +81,38 @@
 @media(max-width:900px){.studio-workspace{grid-template-columns:minmax(0,1fr) 260px;gap:16px;padding:16px}.studio-viewfinder-frame{height:min(62vh,660px)}.studio-side-panel{padding:15px}}
 @media(max-width:680px){.studio-header{height:64px;padding:0 13px}.studio-brand{font-size:12px}.studio-lens-icon{width:36px;height:36px}.studio-live-pill{display:none}.studio-workspace{display:flex;flex-direction:column;padding:10px;gap:10px}.studio-camera-column,.studio-side-panel{width:100%}.studio-viewfinder-frame{height:min(59vh,590px);min-height:330px;border-radius:18px}.studio-capture-controls{padding:13px 4px 6px;gap:6px}.studio-gallery-button,.studio-switch-button{width:44px;height:44px;border-radius:14px}.studio-mode-selector{gap:12px}.studio-mode-selector button{font-size:9px}.studio-shutter-zone{gap:8px}#viewfinder .shutter,.shutter{width:68px;height:68px}.studio-recording-tools{padding:8px 3px 12px}.studio-side-panel{position:static;padding:16px}.studio-side-heading h2{font-size:20px}.studio-header-actions{gap:6px}.studio-close{padding:9px 10px}.studio-viewfinder-footer{font-size:9px}}
 @media(max-width:380px){.studio-mode-selector{gap:8px}.studio-mode-selector button{font-size:8px;letter-spacing:.3px}.studio-viewfinder-frame{min-height:300px}.studio-brandmark{gap:7px}}
+
+/* A softer, scrapbook-like light theme inspired by personal blogging spaces */
+:root[data-theme="light"]{--bg:#f7f3f8;--panel:#fffaff;--panel2:#f0eaf4;--line:#e4d9e9;--text:#30283a;--muted:#756a80;--purple:#8b5cf6;--pink:#d946a6;--cyan:#4094a8;--accent1:#b49af7;--accent2:#f5a6c9;--accent3:#a8dce4;--blend:linear-gradient(115deg,var(--accent1),var(--accent2),var(--accent3))}
+:root[data-theme="light"] body{background:radial-gradient(ellipse at 10% 0%,#f4dff2 0,transparent 38%),radial-gradient(ellipse at 90% 8%,#dceef6 0,transparent 32%),var(--bg);color:var(--text)}
+:root[data-theme="light"] .sidebar{border-right-color:#e7dce9}
+:root[data-theme="light"] .nav button:hover,:root[data-theme="light"] .nav button.active{color:#45314f}
+:root[data-theme="light"] .profile-mini,:root[data-theme="light"] .post,:root[data-theme="light"] .hero,:root[data-theme="light"] .notice{background:#fffaff;border-color:#e7dce9;box-shadow:0 8px 28px #8c6a9b0b}
+:root[data-theme="light"] .topbar{background:#f7f3f8eF;border-bottom:1px solid #e7dce9}
+:root[data-theme="light"] .pill,:root[data-theme="light"] .feed-tabs button{background:#fffaff;border-color:#e4d9e9;color:#51445e}
+:root[data-theme="light"] input,:root[data-theme="light"] textarea,:root[data-theme="light"] select{color:#30283a}
+:root[data-theme="light"] .studio-shell{background:#f8f4f9f5!important;color:#30283a}
+:root[data-theme="light"] .studio-app{background:radial-gradient(ellipse at 50% -30%,#eadcf5 0,transparent 58%),#f8f4f9;color:#30283a}
+:root[data-theme="light"] .studio-header{background:#fffaf2eF;border-bottom-color:#e6d9e9}
+:root[data-theme="light"] .studio-brand span{color:#8c62bd}
+:root[data-theme="light"] .studio-subtitle,:root[data-theme="light"] .studio-side-heading p,:root[data-theme="light"] .studio-caption-label,:root[data-theme="light"] .studio-recording-tools label{color:#786b80}
+:root[data-theme="light"] .studio-side-panel{background:linear-gradient(160deg,#fffaff,#f6edf8);border-color:#e4d8eb}
+:root[data-theme="light"] .studio-action-secondary,:root[data-theme="light"] .studio-tool-button{background:#fffaff;border-color:#e2d5e9;color:#46374f}
+:root[data-theme="light"] .studio-capcut-button{background:#fffaff;color:#685a74;border-color:#e2d5e9}
+:root[data-theme="light"] #studioPanel #postCaption{background:#fffaff;border-color:#e2d5e9;color:#30283a}
+:root[data-theme="light"] .studio-close{background:#fffaff;color:#493d52;border-color:#e2d5e9}
+:root[data-theme="light"] .studio-live-pill{color:#74627e;border-color:#e2d5e9}
+.profile-edit-card{gap:9px!important;padding:10px!important}.profile-photo-button{position:relative;flex-shrink:0;width:42px;height:42px;border:0;background:transparent;padding:0;border-radius:50%}.profile-avatar{width:42px;height:42px;overflow:hidden}.profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}.profile-mini-copy{min-width:0;flex:1}.profile-mini-copy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}.profile-photo-plus{position:absolute;right:-2px;bottom:-2px;background:#8b5cf6;color:white;width:17px;height:17px;border-radius:50%;font-size:13px;display:grid;place-items:center;border:2px solid var(--panel)}.profile-edit-trigger{width:28px;height:28px;border-radius:9px;background:transparent;color:var(--muted)}.profile-edit-trigger:hover{background:color-mix(in srgb,var(--accent1) 18%,transparent)}
+.profile-edit-modal{position:fixed;inset:0;z-index:1200;background:#16101d99;backdrop-filter:blur(8px);display:grid;place-items:center;padding:18px}.profile-edit-card-modal{width:min(420px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 24px 90px #0002}.profile-edit-card-modal h2{margin:4px 0 8px}.profile-edit-card-modal p{color:var(--muted);font-size:13px}.profile-edit-card-modal label{display:block;font-size:12px;color:var(--muted);margin:15px 0 6px}.profile-edit-card-modal input{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--text)}
+@media(max-width:800px){.profile-mini-copy strong{max-width:90px}}
 </style>
 </head>
 <body>
 <div class="layout">
 <aside class="sidebar"><div class="brand">MUSICALI</div><div class="tag">YOUR WORLD. ON REPEAT.</div><nav class="nav" id="nav">
 <button class="active" data-page="For You">✦ <span>For You</span></button><button data-page="Discover">⌕ <span>Discover</span></button><button data-page="Watch">▷ <span>Watch</span></button><button data-page="Listen">♫ <span>Listen</span></button><button data-page="Create">＋ <span>Create</span></button><button data-page="Stories">◉ <span>Stories</span></button><button data-page="Messages">✉ <span>Messages</span></button><button data-page="Library">▤ <span>My Library</span></button>
-</nav><div class="side-bottom"><div class="profile-mini"><div class="avatar">V</div><div><strong style="font-size:12px">Local workspace</strong><div class="muted">Not signed in</div></div><span style="margin-left:auto">⌄</span></div></div></aside>
-<main class="main"><header class="topbar"><div class="search">⌕ <input id="search" placeholder="Search creators, songs, videos..."></div><button class="pill" id="themeOpen" title="Choose your colours">◉ Appearance</button><button class="pill" id="notificationsBtn" title="Enable notifications">♧ Notifications</button><button class="gradient-btn" id="createTop">＋ Create</button></header>
+</nav><div class="side-bottom"><div class="profile-mini profile-edit-card"><button class="profile-photo-button" id="profilePhotoButton" title="Change profile picture" aria-label="Change profile picture"><span class="avatar profile-avatar">V</span><span class="profile-photo-plus">＋</span></button><div class="profile-mini-copy"><strong id="profileDisplayName" style="font-size:12px">Your little corner</strong><div class="muted" id="profileDisplaySub">Make it yours ✿</div></div><button class="profile-edit-trigger" id="profileEditButton" title="Edit profile" aria-label="Edit profile">✎</button><input id="profilePhotoInput" type="file" accept="image/*" hidden></div></div></aside>
+<main class="main"><header class="topbar"><div class="search">⌕ <input id="search" placeholder="Search creators, songs, videos..."></div><button class="pill" id="themeToggle" title="Switch between light and dark appearance">☀ Light mode</button><button class="pill" id="themeOpen" title="Choose your colours">🎨 Colours</button><button class="pill" id="notificationsBtn" title="Enable notifications">♧ Notifications</button><button class="gradient-btn" id="createTop">＋ Create</button></header>
 <div id="appView" style="display:none"></div>
 <section class="hero" data-home-section><div class="eyebrow">FOR YOU</div><h1>Your feed.</h1><p>A visual scrapbook for things you love: photos, videos, little thoughts, inspiration, and your own corners of the internet. Import media to start your personal collection. Posts are currently saved on this device.</p><div class="hero-actions"><button class="gradient-btn" id="createTopHero">＋ Make something</button><button class="pill" id="cameraTop">◎ Open camera</button><button class="pill" id="connectCapCut">↗ CapCut</button></div></section>
 <section data-home-section><div class="section-head"><h2 id="feedTitle">Your inspiration wall</h2><span class="muted">A little Tumblr, a little Pinterest</span></div><div class="feed-tabs" id="tabs"><button class="active" data-filter="All">All</button><button data-filter="Video">Videos</button><button data-filter="Audio">Audio</button><button data-filter="Photo">Photos</button></div></section>
@@ -247,6 +271,43 @@ $('notificationsBtn').onclick=enableNotifications;$('notificationsSide').onclick
 $('explore').onclick=()=>document.querySelector('#tabs').scrollIntoView({behavior:'smooth',block:'center'});
 $('startListening').onclick=()=>toast('A real music catalogue and playback licensing need to be connected.');
 renderFeed();
+
+/* Personalise this browser without requiring an account yet. */
+function applySavedAppearance(){
+ let mode='light';
+ try{mode=localStorage.getItem('musicali-theme')||'light'}catch(e){}
+ document.documentElement.dataset.theme=mode;
+ const b=$('themeToggle');if(b)b.textContent=mode==='light'?'☾ Dark mode':'☀ Light mode';
+}
+function toggleAppearance(){
+ const next=document.documentElement.dataset.theme==='light'?'dark':'light';
+ document.documentElement.dataset.theme=next;
+ try{localStorage.setItem('musicali-theme',next)}catch(e){}
+ $('themeToggle').textContent=next==='light'?'☾ Dark mode':'☀ Light mode';
+ toast(next==='light'?'Soft light mode is on ☀':'Dark mode is on ☾');
+}
+function loadLocalProfile(){
+ let name='Your little corner',pic='';
+ try{name=localStorage.getItem('musicali-profile-name')||name;pic=localStorage.getItem('musicali-profile-photo')||''}catch(e){}
+ $('profileDisplayName').textContent=name;
+ $('profileDisplaySub').textContent='Your space, your vibe ✿';
+ document.querySelectorAll('.profile-avatar').forEach(el=>{el.innerHTML=pic?'<img alt="Your profile picture" src="'+pic+'">':'V'});
+}
+function chooseProfilePhoto(){$('profilePhotoInput').click()}
+$('profilePhotoButton').onclick=chooseProfilePhoto;
+$('profilePhotoInput').addEventListener('change',()=>{
+ const file=$('profilePhotoInput').files&&$('profilePhotoInput').files[0];if(!file)return;
+ if(!file.type.startsWith('image/')){toast('Choose an image for your profile picture.');return}
+ if(file.size>3*1024*1024){toast('Please choose an image under 3 MB.');return}
+ const reader=new FileReader();reader.onload=()=>{try{localStorage.setItem('musicali-profile-photo',reader.result);loadLocalProfile();toast('Profile picture updated ✨')}catch(e){toast('This image is too large for browser storage. Try a smaller picture.')}};reader.readAsDataURL(file);
+});
+$('profileEditButton').onclick=()=>{
+ let modal=document.getElementById('profileEditModal');
+ if(!modal){modal=document.createElement('div');modal.id='profileEditModal';modal.className='profile-edit-modal';modal.innerHTML='<div class="profile-edit-card-modal" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle"><div class="eyebrow">YOUR LITTLE CORNER</div><h2 id="profileEditTitle">Make yourself at home ✿</h2><p>This profile is saved in this browser for now. Accounts can wait.</p><label for="profileNameInput">What should we call you?</label><input id="profileNameInput" maxlength="32" placeholder="Your display name"><div style="display:flex;gap:9px;margin-top:17px;justify-content:flex-end"><button class="pill" id="profileCancel">Cancel</button><button class="gradient-btn" id="profileSave">Save profile</button></div><button class="pill" id="profileChangePhoto" style="margin-top:12px;width:100%">Change profile picture</button></div>';document.body.appendChild(modal);modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});modal.querySelector('#profileCancel').onclick=()=>modal.remove();modal.querySelector('#profileSave').onclick=()=>{const value=modal.querySelector('#profileNameInput').value.trim()||'Your little corner';try{localStorage.setItem('musicali-profile-name',value)}catch(e){}loadLocalProfile();modal.remove();toast('Your profile is updated ✨')};modal.querySelector('#profileChangePhoto').onclick=()=>{modal.remove();chooseProfilePhoto()}}
+ let current='Your little corner';try{current=localStorage.getItem('musicali-profile-name')||current}catch(e){}modal.querySelector('#profileNameInput').value=current;modal.style.display='grid';modal.querySelector('#profileNameInput').focus();
+};
+$('themeToggle').onclick=toggleAppearance;
+applySavedAppearance();loadLocalProfile();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
