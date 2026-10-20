@@ -1,154 +1,125 @@
-/* MUSICALI authentication client. Uses only Supabase's browser-safe publishable key. */
+/* MUSICALI: email one-time-code sign-in gate. */
 (() => {
   const SUPABASE_URL = "https://iiwcpshtdjanyiixosle.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FFYD6lQmu6LfrPyhiVM9wg_e0hi41NC";
   if (!window.supabase?.createClient) {
-    console.error("MUSICALI auth: Supabase client library did not load.");
+    console.error("MUSICALI sign-in could not load Supabase.");
     return;
   }
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   window.musicaliSupabase = client;
 
   const style = document.createElement("style");
-  style.textContent = `
-  .auth-trigger{padding:10px 15px;border-radius:999px;background:linear-gradient(115deg,#a78bfa,#f0abfc);color:#171321;font-weight:800}
-  .auth-overlay{position:fixed;inset:0;background:#080710d9;backdrop-filter:blur(12px);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px}
-  .auth-overlay.open{display:flex}.auth-card{width:min(100%,430px);background:#191922;border:1px solid #ffffff20;border-radius:24px;padding:26px;box-shadow:0 24px 90px #0009;color:#f7f7fb}
-  .auth-card h2{font-size:26px;margin:0 0 6px}.auth-sub{color:#b6b6c7;margin:0 0 20px}.auth-card label{display:block;font-size:13px;color:#d8d4e7;margin:12px 0 6px}
-  .auth-card input{width:100%;padding:12px 13px;border-radius:12px;border:1px solid #393946;background:#101018;color:#fff;outline:none}.auth-card input:focus{border-color:#a78bfa}
-  .auth-actions{display:grid;gap:10px;margin-top:16px}.auth-action{padding:12px;border-radius:12px;background:linear-gradient(115deg,#a78bfa,#f0abfc);color:#171321;font-weight:800}.auth-secondary{padding:11px;border-radius:12px;background:#252531;border:1px solid #ffffff18;color:#fff}
-  .auth-row{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:14px;font-size:13px}.auth-link{color:#d9b8ff;text-decoration:underline;cursor:pointer;background:none;padding:0}.auth-status{font-size:13px;color:#c9b8ff;min-height:20px;margin-top:12px}.auth-close{float:right;background:#252531;border-radius:50%;width:34px;height:34px}
-  .auth-note{font-size:12px;color:#aaa8bc;margin-top:14px;line-height:1.5}
-  @media(max-width:600px){.auth-card{padding:21px}.topbar .auth-trigger{padding:9px 11px}}
-  `;
+  style.textContent = '#musicaliSignInGate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px;background:radial-gradient(ellipse at 50% 0%,#38234f 0,transparent 48%),#100d18;color:#f8f5ff;font-family:Inter,system-ui,sans-serif}#musicaliSignInGate *{box-sizing:border-box}#musicaliSignInGate .gate-card{width:min(100%,430px);padding:clamp(26px,5vw,42px);border:1px solid #ffffff1b;border-radius:28px;background:#191622ef;box-shadow:0 28px 100px #0008;text-align:center}#musicaliSignInGate .gate-mark{font-size:clamp(25px,5vw,32px);font-weight:950;letter-spacing:4px;background:linear-gradient(110deg,#c4a7ff,#f0abfc,#8be9fd);color:transparent;background-clip:text;-webkit-background-clip:text}#musicaliSignInGate .gate-spark{margin:18px auto 14px;width:48px;height:4px;border-radius:9px;background:linear-gradient(90deg,#a78bfa,#f0abfc,#8be9fd)}#musicaliSignInGate h1{font-size:clamp(25px,5vw,32px);line-height:1.15;letter-spacing:-1px;margin:0 0 10px}#musicaliSignInGate .gate-sub{color:#bdb5ce;font-size:14px;line-height:1.65;margin:0 auto 26px;max-width:310px}#musicaliSignInGate label{display:block;text-align:left;color:#e8e0f5;font-size:12px;font-weight:750;margin:0 0 8px}#musicaliSignInGate input{width:100%;height:51px;padding:0 14px;border-radius:13px;border:1px solid #4a405c;background:#100d18;color:#fff;outline:none;font-size:15px}#musicaliSignInGate input:focus{border-color:#c4a7ff;box-shadow:0 0 0 3px #a78bfa24}#musicaliSignInGate #gateCode{letter-spacing:9px;text-align:center;font-size:23px;font-weight:800}#musicaliSignInGate .gate-primary{width:100%;min-height:50px;margin-top:14px;border:0;border-radius:13px;background:linear-gradient(110deg,#b8a0ff,#f0abfc);color:#1a1324;font-weight:850;font-size:14px;cursor:pointer}#musicaliSignInGate .gate-primary:disabled{opacity:.6;cursor:wait}#musicaliSignInGate .gate-status{min-height:23px;margin:14px 0 0;color:#d7c5ff;font-size:12px;line-height:1.5}#musicaliSignInGate .gate-secondary{margin-top:8px;padding:8px;background:none;border:0;color:#c9b3ff;font-size:12px;text-decoration:underline;cursor:pointer}#musicaliSignInGate .gate-foot{margin-top:24px;color:#777084;font-size:10px;letter-spacing:.5px}@media(max-width:480px){#musicaliSignInGate{padding:16px}#musicaliSignInGate .gate-card{border-radius:23px}}';
   document.head.appendChild(style);
 
-  const overlay = document.createElement("div");
-  overlay.className = "auth-overlay";
-  overlay.id = "musicaliAuthOverlay";
-  overlay.innerHTML = `
-    <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-      <button class="auth-close" id="authClose" aria-label="Close sign-in">×</button>
-      <div style="font-weight:950;letter-spacing:3px;background:linear-gradient(115deg,#a78bfa,#f0abfc,#8be9fd);color:transparent;background-clip:text;margin-bottom:15px">MUSICALI</div>
-      <h2 id="authTitle">Welcome back.</h2>
-      <p class="auth-sub" id="authSubtitle">Sign in to your creative world.</p>
-      <form id="authForm">
-        <label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com">
-        <label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters">
-        <div class="auth-actions"><button class="auth-action" id="authSubmit" type="submit">Sign in</button></div>
-      </form>
-      <div class="auth-actions">
-        <button class="auth-secondary" id="authGoogle" type="button">Continue with Google</button>
-        <button class="auth-secondary" id="authApple" type="button">Continue with Apple</button>
-      </div>
-      <div class="auth-row"><span id="authModeHint">New to MUSICALI?</span><button class="auth-link" id="authToggle" type="button">Create an account</button></div>
-      <div class="auth-row"><button class="auth-link" id="authReset" type="button">Forgot password?</button><button class="auth-link" id="authSignOut" type="button" style="display:none">Sign out</button></div>
-      <div class="auth-status" id="authStatus" role="status" aria-live="polite"></div>
-      <p class="auth-note">Email confirmation may be required. Google and Apple sign-in will work once their providers are configured in Supabase.</p>
-    </section>`;
-  document.body.appendChild(overlay);
+  const gate = document.createElement("div");
+  gate.id = "musicaliSignInGate";
+  gate.setAttribute("role", "main");
+  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>MUSICALI</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Your world, on repeat.</h1><p class='gate-sub' id='gateSubtitle'>Sign in with your Gmail. We will send you a one-time verification code.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Gmail address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@gmail.com' required></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Continue with Gmail</button></form><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different Gmail</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div class='gate-foot'>A LITTLE SPACE FOR EVERYTHING YOU LOVE ✦</div></section>";
+  document.body.appendChild(gate);
 
-  let mode = "signin";
   const $ = id => document.getElementById(id);
-  const status = message => { $("authStatus").textContent = message || ""; };
-  const toast = message => { if (typeof window.toast === "function") window.toast(message); else status(message); };
-  const open = () => { overlay.classList.add("open"); $("authEmail").focus(); };
-  const close = () => overlay.classList.remove("open");
-  const setMode = next => {
-    mode = next;
-    $("authTitle").textContent = mode === "signup" ? "Create your account." : "Welcome back.";
-    $("authSubtitle").textContent = mode === "signup" ? "Join your creative world." : "Sign in to your creative world.";
-    $("authSubmit").textContent = mode === "signup" ? "Create account" : "Sign in";
-    $("authPassword").autocomplete = mode === "signup" ? "new-password" : "current-password";
-    $("authModeHint").textContent = mode === "signup" ? "Already have an account?" : "New to MUSICALI?";
-    $("authToggle").textContent = mode === "signup" ? "Sign in" : "Create an account";
-    status("");
-  };
+  let stage = "email";
+  let pendingEmail = "";
+
+  function showGate() {
+    gate.style.display = "flex";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+  }
+  function hideGate() {
+    gate.style.display = "none";
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+  }
+  function setStatus(message, isError = false) {
+    $("gateStatus").textContent = message || "";
+    $("gateStatus").style.color = isError ? "#ffb4c0" : "#d7c5ff";
+  }
   function paintUser(user) {
     const mini = document.querySelector(".profile-mini");
-    if (mini) {
-      const avatar = mini.querySelector(".avatar");
-      const strong = mini.querySelector("strong");
-      const muted = mini.querySelector(".muted");
-      const email = user?.email || user?.phone || "";
-      if (avatar) avatar.textContent = (email[0] || "M").toUpperCase();
-      if (strong) strong.textContent = user ? (user.user_metadata?.display_name || email.split("@")[0] || "Creator") : "Local workspace";
-      if (muted) muted.textContent = user ? email : "Not signed in";
-    }
-    $("authSignOut").style.display = user ? "inline" : "none";
-    const trigger = $("musicaliAuthTrigger");
-    if (trigger) trigger.textContent = user ? "Account" : "Sign in";
+    if (!mini) return;
+    const avatar = mini.querySelector(".avatar");
+    const strong = mini.querySelector("strong");
+    const muted = mini.querySelector(".muted");
+    const email = user?.email || "";
+    if (avatar) avatar.textContent = (user?.user_metadata?.display_name || email || "M").slice(0, 1).toUpperCase();
+    if (strong) strong.textContent = user?.user_metadata?.display_name || (email.split("@")[0] || "Creator");
+    if (muted) muted.textContent = email;
   }
-  const trigger = document.createElement("button");
-  trigger.className = "auth-trigger";
-  trigger.id = "musicaliAuthTrigger";
-  trigger.type = "button";
-  trigger.textContent = "Sign in";
-  trigger.addEventListener("click", open);
-  const topbar = document.querySelector(".topbar");
-  if (topbar) topbar.insertBefore(trigger, topbar.firstChild);
-
-  $("authClose").addEventListener("click", close);
-  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
-  $("authToggle").addEventListener("click", () => setMode(mode === "signup" ? "signin" : "signup"));
-
-  $("authForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const email = $("authEmail").value.trim();
-    const password = $("authPassword").value;
-    const submit = $("authSubmit");
+  function isGmail(email) { return /^[^\s@]+@gmail\.com$/i.test(email); }
+  function resetToEmail() {
+    stage = "email";
+    pendingEmail = "";
+    $("gateEmailWrap").hidden = false;
+    $("gateCodeWrap").hidden = true;
+    $("gateChangeEmail").hidden = true;
+    $("gateEmail").readOnly = false;
+    $("gateCode").required = false;
+    $("gateCode").value = "";
+    $("gateSubmit").textContent = "Continue with Gmail";
+    $("gateSubtitle").textContent = "Sign in with your Gmail. We will send you a one-time verification code.";
+    setStatus("");
+    $("gateEmail").focus();
+  }
+  $("gateChangeEmail").addEventListener("click", resetToEmail);
+  $("gateForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const submit = $("gateSubmit");
     submit.disabled = true;
-    status(mode === "signup" ? "Creating your account…" : "Signing you in…");
     try {
-      if (mode === "signup") {
-        const usernameBase = (email.split("@")[0] || "creator").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 18) || "creator";
-        const { data, error } = await client.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: window.location.href.split("#")[0], data: { username: usernameBase, display_name: email.split("@")[0] } }
-        });
-        if (error) throw error;
-        if (data.session) {
-          status("Account created. You're signed in!");
-          paintUser(data.user); setTimeout(close, 900);
-        } else {
-          status("Account created. Check your email for the confirmation link, then sign in.");
+      if (stage === "email") {
+        const email = $("gateEmail").value.trim().toLowerCase();
+        if (!isGmail(email)) {
+          setStatus("Please enter a Gmail address ending in @gmail.com.", true);
+          return;
         }
-      } else {
-        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        setStatus("Sending your verification code…");
+        const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
         if (error) throw error;
-        status("You're signed in. Welcome to MUSICALI!");
-        paintUser(data.user); toast("Signed in successfully 💜"); setTimeout(close, 650);
+        pendingEmail = email;
+        stage = "code";
+        $("gateEmailWrap").hidden = true;
+        $("gateCodeWrap").hidden = false;
+        $("gateCode").required = true;
+        $("gateChangeEmail").hidden = false;
+        $("gateSubmit").textContent = "Verify code and sign in";
+        $("gateSubtitle").textContent = "Check your Gmail inbox for the 6-digit code. If it is missing, check Spam.";
+        setStatus("Code sent to " + pendingEmail + ".");
+        $("gateCode").focus();
+      } else {
+        const token = $("gateCode").value.trim();
+        if (!/^[0-9]{6}$/.test(token)) {
+          setStatus("Enter the 6-digit code from your email.", true);
+          return;
+        }
+        setStatus("Verifying your code…");
+        const { data, error } = await client.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
+        if (error) throw error;
+        if (!data?.session) throw new Error("No sign-in session was returned. Please try again.");
+        paintUser(data.user);
+        setStatus("Signed in. Welcome to MUSICALI!");
+        setTimeout(hideGate, 450);
       }
-    } catch (err) {
-      status(err?.message || "We couldn't complete that request. Check your details and try again.");
-    } finally { submit.disabled = false; }
+    } catch (error) {
+      setStatus(error?.message || "We could not complete sign-in. Please try again.", true);
+    } finally {
+      submit.disabled = false;
+    }
   });
 
-  $("authGoogle").addEventListener("click", async () => {
-    status("Opening Google sign-in…");
-    const { error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.href.split("#")[0] } });
-    if (error) status(error.message);
+  client.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) { paintUser(session.user); hideGate(); }
+    else showGate();
   });
-  $("authApple").addEventListener("click", async () => {
-    status("Opening Apple sign-in…");
-    const { error } = await client.auth.signInWithOAuth({ provider: "apple", options: { redirectTo: window.location.href.split("#")[0] } });
-    if (error) status(error.message);
+  showGate();
+  client.auth.getSession().then(({ data, error }) => {
+    if (error) { setStatus("Please sign in with your Gmail to continue.", true); return; }
+    if (data?.session?.user) { paintUser(data.session.user); hideGate(); }
+  }).catch(error => {
+    console.error("MUSICALI session check failed:", error);
+    setStatus("Please sign in with your Gmail to continue.", true);
   });
-  $("authReset").addEventListener("click", async () => {
-    const email = $("authEmail").value.trim();
-    if (!email) return status("Enter your email address first.");
-    status("Sending password reset email…");
-    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
-    status(error ? error.message : "If that email belongs to an account, a password reset link will arrive shortly.");
-  });
-  $("authSignOut").addEventListener("click", async () => {
-    const { error } = await client.auth.signOut();
-    if (error) return status(error.message);
-    paintUser(null); status("You've signed out."); toast("Signed out.");
-  });
-
-  client.auth.onAuthStateChange((_event, session) => paintUser(session?.user || null));
-  client.auth.getSession().then(({ data }) => paintUser(data.session?.user || null)).catch(console.error);
-  window.musicaliAuth = { open, close, client };
+  window.musicaliAuth = { client, open: showGate, close: hideGate };
 })();
