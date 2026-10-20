@@ -231,7 +231,7 @@
           return;
         }
         setStatus("Sending your verification code…");
-        const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+        const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: "https://factorydefaulth12.github.io/Musicali/" } });
         if (error) throw error;
         pendingEmail = email;
         stage = "code";
