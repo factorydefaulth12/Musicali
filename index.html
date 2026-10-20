@@ -345,6 +345,39 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth.js?v=20261020-magic-link-1"></script>
+<script>
+(function loadAcoulysAuth() {
+  const sources = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+    "https://unpkg.com/@supabase/supabase-js@2"
+  ];
+  function loadAuth() {
+    const auth = document.createElement("script");
+    auth.src = "auth.js?v=20261020-magic-link-2";
+    auth.onerror = function () {
+      console.error("Acoulys could not load auth.js. Check your connection and refresh.");
+    };
+    document.body.appendChild(auth);
+  }
+  function trySource(index) {
+    if (window.supabase && window.supabase.createClient) {
+      loadAuth();
+      return;
+    }
+    if (index >= sources.length) {
+      loadAuth();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = sources[index];
+    script.onload = function () {
+      if (window.supabase && window.supabase.createClient) loadAuth();
+      else trySource(index + 1);
+    };
+    script.onerror = function () { trySource(index + 1); };
+    document.head.appendChild(script);
+  }
+  trySource(0);
+})();
+</script>
 </body></html>
