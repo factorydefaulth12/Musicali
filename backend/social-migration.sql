@@ -4,6 +4,8 @@ alter table public.posts alter column media_path drop not null;
 alter table public.posts drop constraint if exists posts_media_type_check;
 alter table public.posts add constraint posts_media_type_check check (media_type in ('image','video','audio','text'));
 alter table public.posts add column if not exists view_count bigint not null default 0;
+alter table public.posts drop constraint if exists posts_caption_check;
+alter table public.posts add constraint posts_caption_check check (char_length(caption) <= 12000);
 
 create table if not exists public.post_views (
   post_id uuid not null references public.posts(id) on delete cascade,
