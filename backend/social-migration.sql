@@ -52,3 +52,17 @@ begin
 end;
 $$;
 grant execute on function public.record_post_view(uuid) to authenticated;
+
+-- Allow signed-in viewers to read objects attached to posts they can see.
+drop policy if exists "public post media readable" on storage.objects;
+create policy "public post media readable" on storage.objects for select to authenticated
+using (
+  bucket_id = 'musicali-media' and exists (
+    select 1 from public.posts p where p.media_path = storage.objects.name and (
+      p.user_id = auth.uid() or p.visibility = 'public'
+      or (p.visibility = 'followers' and exists (
+        select 1 from public.follows f where f.follower_id = auth.uid() and f.following_id = p.user_id
+      ))
+    )
+  )
+);
