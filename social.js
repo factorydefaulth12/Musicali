@@ -75,11 +75,12 @@
       console.warn("Acoulys profile setup needs attention; continuing feed load:", profileError);
     }
     const { data, error } = await client.from("posts")
-      .select("id,user_id,caption,media_path,media_type,visibility,created_at,view_count")
+      .select("id,user_id,caption,media_path,media_type,visibility,created_at")
       .eq("visibility", "public").order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     remotePosts = (data || []).map(post => ({
       ...post,
+      view_count: Number(post.view_count || 0),
       profiles: { username: "creator", display_name: "Creator" },
       likes: [{ count: 0 }],
       comments: [{ count: 0 }]
