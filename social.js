@@ -116,10 +116,10 @@
       console.warn("Acoulys feed loaded, but profile/like/comment details could not be refreshed:", enrichmentError);
     }
     followedIds = new Set();
-    if (authorIds.length) {
+    if (authorIdsForProfiles.length) {
       const [followingRes, followerRes] = await Promise.all([
-        client.from("follows").select("following_id").eq("follower_id", signedInUser.id).in("following_id", authorIds),
-        client.from("follows").select("following_id").in("following_id", authorIds)
+        client.from("follows").select("following_id").eq("follower_id", signedInUser.id).in("following_id", authorIdsForProfiles),
+        client.from("follows").select("following_id").in("following_id", authorIdsForProfiles)
       ]);
       if (followingRes.error) throw followingRes.error;
       if (followerRes.error) throw followerRes.error;
@@ -128,8 +128,8 @@
       (followerRes.data || []).forEach(row => { followerCounts[row.following_id] = (followerCounts[row.following_id] || 0) + 1; });
       remotePosts.forEach(post => { post.followers_count = followerCounts[post.user_id] || 0; });
     }
-    if (postIds.length) {
-      const { data: likes, error: likesError } = await client.from("likes").select("post_id").eq("user_id", signedInUser.id).in("post_id", postIds);
+    if (postIdsForCounts.length) {
+      const { data: likes, error: likesError } = await client.from("likes").select("post_id").eq("user_id", signedInUser.id).in("post_id", postIdsForCounts);
       if (likesError) throw likesError;
       const likedIds = new Set((likes || []).map(row => row.post_id));
       remotePosts.forEach(post => { post.viewer_liked = likedIds.has(post.id); });
