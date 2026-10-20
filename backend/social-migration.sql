@@ -17,7 +17,6 @@ alter table public.post_views enable row level security;
 drop policy if exists "users record own post views" on public.post_views;
 create policy "users record own post views" on public.post_views for insert to authenticated with check (viewer_id = auth.uid());
 drop policy if exists "view counts are readable" on public.post_views;
-create policy "view counts are readable" on public.post_views for select to authenticated using (true);
 
 create or replace function public.sync_post_view_count()
 returns trigger language plpgsql security definer set search_path = public
