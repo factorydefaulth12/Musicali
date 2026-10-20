@@ -358,6 +358,13 @@
     }
   }
   document.addEventListener("click", event => {
+    const filter = event.target.closest("[data-filter]");
+    if (filter) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      document.querySelectorAll("[data-filter]").forEach(button => button.classList.toggle("active", button === filter));
+      renderSocialFeed();
+      return;
+    }
     const like = event.target.closest("[data-like]");
     const follow = event.target.closest("[data-follow]");
     const comment = event.target.closest("[data-comment]");
@@ -387,6 +394,8 @@
     if (signedInUser) window.setTimeout(() => loadSocialData().catch(error => { console.error("Acoulys feed load failed:", error); say("Couldn't load the shared feed. Check the social migration and Supabase connection."); }), 0);
     else renderSignedOut();
   });
+  // Keep every route back to For You on the shared feed, not the old device-only feed.
+  window.renderFeed = renderSocialFeed;
   window.acoulysSocial = { refresh: () => loadSocialData(), publish: publishToCloud };
   loadSocialData().catch(error => {
     console.error("Acoulys social startup failed:", error);
