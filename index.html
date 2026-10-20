@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#100b1d">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#101116">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">\n<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="favicon.svg">
 <meta name="application-name" content="Acoulys">
 <meta name="description" content="Acoulys is a place to make short videos, discover sounds, join challenges, and find your people.">
@@ -336,6 +336,15 @@ $('themeToggle').onclick=toggleAppearance;
 applySavedAppearance();loadLocalProfile();
 </script>
 
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(error => {
+      console.info("Acoulys offline install support is unavailable in this browser.", error);
+    });
+  });
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth.js?v=20261020-acoulys-1"></script>
 </body></html>
