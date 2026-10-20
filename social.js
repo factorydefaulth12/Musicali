@@ -276,7 +276,14 @@
         return true;
       }
       const message = error?.message || "Publishing failed.";
-      say(message.includes("musicali-media") || message.includes("Bucket") ? "Media storage is not ready yet. Run backend/social-migration.sql in Supabase, then retry." : "Could not publish: " + message);
+      console.error("Acoulys backend setup hint:", message);
+      if (/relation .* does not exist|column .* does not exist|schema cache|could not find the .* table/i.test(message)) {
+        say("Acoulys database is not set up yet. Run the complete backend/setup.sql file in Supabase SQL Editor, then refresh.");
+      } else if (/row-level security|permission denied|bucket/i.test(message)) {
+        say("Supabase is blocking this upload. Run the complete backend/setup.sql file, confirm it succeeds, then try again.");
+      } else {
+        say("Could not publish: " + message);
+      }
       return false;
     } finally {
       busy = false;
