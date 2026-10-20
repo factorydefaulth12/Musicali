@@ -377,7 +377,12 @@
     if (draft) { event.preventDefault(); event.stopImmediatePropagation(); publishLocalDraft(draft.dataset.publishDraft); return; }
     if (event.target.closest("#publishPost")) {
       event.preventDefault(); event.stopImmediatePropagation();
-      publishToCloud({ blob: window.recordedBlob || recordedBlob, mediaType: (window.recordedBlob || recordedBlob)?.type?.startsWith("image/") ? "image" : (window.recordedBlob || recordedBlob)?.type?.startsWith("audio/") ? "audio" : "video", caption: $("postCaption")?.value || "", fileName: $("mediaImport")?.files?.[0]?.name || "" });
+      const creation = window.acoulysGetCurrentCreation?.() || {};
+      const blob = creation.blob;
+      if (!blob) { say("Choose or record a photo, video, or audio clip first."); return; }
+      const mediaType = blob.type?.startsWith("image/") ? "image" : blob.type?.startsWith("audio/") ? "audio" : blob.type?.startsWith("video/") ? "video" : "";
+      if (!mediaType) { say("This file type cannot be published yet."); return; }
+      publishToCloud({ blob, mediaType, caption: creation.caption || $("postCaption")?.value || "", fileName: creation.fileName || $("mediaImport")?.files?.[0]?.name || "" });
       return;
     }
     if (event.target.closest("#blogPublish")) {
