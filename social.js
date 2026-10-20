@@ -181,25 +181,33 @@
         '<div class="muted" style="margin-top:7px">' + short(post.followers_count || 0) + ' followers · ' + escape(post.media_type.toUpperCase()) + '</div></div></article>';
     }).join("");
     feed.innerHTML = cards;
-    const videos = feed.querySelectorAll("video[data-watch-post]");
-    videos.forEach(video => {
-      video.addEventListener("play", () => {
-        const id = video.dataset.watchPost;
-        const key = "acoulys-viewed:" + id;
-        try {
-          if (sessionStorage.getItem(key)) return;
-          sessionStorage.setItem(key, "1");
-        } catch (_) {}
-        client.rpc("record_post_view", { post_uuid: id }).then(({ error }) => {
-          if (!error) {
-            const post = remotePosts.find(p => p.id === id);
-            if (post && post.user_id !== signedInUser?.id) post.view_count = Number(post.view_count || 0) + 1;
-            const counter = video.closest(".post")?.querySelector(".post-actions span");
-            if (counter && post) counter.textContent = "◉ " + short(post.view_count) + " views";
-          }
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.55) return;
+          observer.unobserve(entry.target);
+          const card = entry.target;
+          const id = card.dataset.postId;
+          const post = remotePosts.find(p => p.id === id);
+          if (!post || post.user_id === signedInUser?.id) return;
+          const key = "acoulys-viewed:" + signedInUser.id + ":" + id;
+          try {
+            if (sessionStorage.getItem(key)) return;
+            sessionStorage.setItem(key, "1");
+          } catch (_) {}
+          client.rpc("record_post_view", { post_uuid: id }).then(async ({ error }) => {
+            if (error) { console.warn("Could not record post view:", error.message); return; }
+            const { data } = await client.from("posts").select("view_count").eq("id", id).maybeSingle();
+            if (data) {
+              post.view_count = Number(data.view_count || 0);
+              const counter = card.querySelector(".post-actions span");
+              if (counter) counter.textContent = "◉ " + short(post.view_count) + " views";
+            }
+          });
         });
-      }, { once: true });
-    });
+      }, { threshold: [0.55] });
+      feed.querySelectorAll(".social-post").forEach(card => observer.observe(card));
+    }
   }
   async function renderOwnStats() {
     if (!signedInUser) return;
