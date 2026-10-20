@@ -1,4 +1,4 @@
-/* Acoulys: Gmail one-time-code sign-in gate. */
+/* Acoulys account access and profile onboarding. Never request a user's Google password. */
 (() => {
   const SUPABASE_URL = "https://iiwcpshtdjanyiixosle.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FFYD6lQmu6LfrPyhiVM9wg_e0hi41NC";
@@ -8,18 +8,20 @@
   if (client) window.acoulysSupabase = client;
 
   const style = document.createElement("style");
-  style.textContent = '#musicaliSignInGate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px;background:radial-gradient(ellipse at 50% 0%,#2c1c39 0,transparent 48%),#100d18;color:#f8f5ff;font-family:Inter,system-ui,sans-serif}#musicaliSignInGate *{box-sizing:border-box}#musicaliSignInGate .gate-card{width:min(100%,430px);padding:clamp(26px,5vw,42px);border:1px solid #ffffff1b;border-radius:28px;background:#191622ef;box-shadow:0 28px 100px #0008;text-align:center}#musicaliSignInGate .gate-mark{font-size:clamp(25px,5vw,32px);font-weight:950;letter-spacing:4px;background:linear-gradient(110deg,#ff4d6d,#7657ff,#27d6c4);color:transparent;background-clip:text;-webkit-background-clip:text}#musicaliSignInGate .gate-spark{margin:18px auto 14px;width:48px;height:4px;border-radius:9px;background:linear-gradient(90deg,#a78bfa,#f0abfc,#8be9fd)}#musicaliSignInGate h1{font-size:clamp(25px,5vw,32px);line-height:1.15;letter-spacing:-1px;margin:0 0 10px}#musicaliSignInGate .gate-sub{color:#bdb5ce;font-size:14px;line-height:1.65;margin:0 auto 26px;max-width:310px}#musicaliSignInGate label{display:block;text-align:left;color:#e8e0f5;font-size:12px;font-weight:750;margin:0 0 8px}#musicaliSignInGate input{width:100%;height:51px;padding:0 14px;border-radius:13px;border:1px solid #4a405c;background:#100d18;color:#fff;outline:none;font-size:15px}#musicaliSignInGate input:focus{border-color:#c4a7ff;box-shadow:0 0 0 3px #27d6c424}#musicaliSignInGate #gateCode{letter-spacing:9px;text-align:center;font-size:23px;font-weight:800}#musicaliSignInGate .gate-primary{width:100%;min-height:50px;margin-top:14px;border:0;border-radius:13px;background:linear-gradient(110deg,#ff647c,#27d6c4);color:#1a1324;font-weight:850;font-size:14px;cursor:pointer}#musicaliSignInGate .gate-primary:disabled{opacity:.6;cursor:wait}#musicaliSignInGate .gate-status{min-height:23px;margin:14px 0 0;color:#d2fff9;font-size:12px;line-height:1.5}#musicaliSignInGate .gate-secondary{margin-top:8px;padding:8px;background:none;border:0;color:#d2fff9;font-size:12px;text-decoration:underline;cursor:pointer}#musicaliSignInGate .gate-foot{margin-top:24px;color:#777084;font-size:10px;letter-spacing:.5px}@media(max-width:480px){#musicaliSignInGate{padding:16px}#musicaliSignInGate .gate-card{border-radius:23px}}';
+  style.textContent = '#acoulysAuthGate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;overflow:auto;padding:18px;background:radial-gradient(ellipse at 50% 0%,#2c1c39 0,transparent 48%),#100d18;color:#f8f5ff;font-family:Inter,system-ui,sans-serif}#acoulysAuthGate *{box-sizing:border-box}#acoulysAuthGate .gate-card{width:min(100%,500px);max-height:calc(100dvh - 36px);overflow:auto;padding:clamp(22px,4vw,36px);border:1px solid #ffffff1b;border-radius:26px;background:#191622f5;box-shadow:0 28px 100px #0008;text-align:center}#acoulysAuthGate .gate-mark{font-size:28px;font-weight:950;letter-spacing:4px;background:linear-gradient(110deg,#ff4d6d,#7657ff,#27d6c4);color:transparent;background-clip:text;-webkit-background-clip:text}#acoulysAuthGate .gate-spark{margin:13px auto;width:48px;height:4px;border-radius:9px;background:linear-gradient(90deg,#a78bfa,#f0abfc,#8be9fd)}#acoulysAuthGate h1{font-size:clamp(24px,5vw,30px);line-height:1.15;letter-spacing:-.7px;margin:0 0 9px}#acoulysAuthGate .gate-sub{color:#bdb5ce;font-size:13px;line-height:1.55;margin:0 auto 22px;max-width:360px}#acoulysAuthGate label{display:block;text-align:left;color:#e8e0f5;font-size:12px;font-weight:750;margin:0 0 7px}#acoulysAuthGate input,#acoulysAuthGate select{width:100%;min-width:0;height:45px;padding:0 12px;border-radius:12px;border:1px solid #4a405c;background:#100d18;color:#fff;outline:none;font-size:14px}#acoulysAuthGate input:focus,#acoulysAuthGate select:focus{border-color:#c4a7ff;box-shadow:0 0 0 3px #27d6c424}#acoulysAuthGate input[type=file]{height:auto;padding:10px;font-size:12px}#acoulysAuthGate #gateCode{letter-spacing:8px;text-align:center;font-size:22px;font-weight:800}#acoulysAuthGate .gate-primary{width:100%;min-height:48px;margin-top:14px;border:0;border-radius:13px;background:linear-gradient(110deg,#ff647c,#27d6c4);color:#1a1324;font-weight:850;font-size:14px;cursor:pointer}#acoulysAuthGate .gate-primary:disabled{opacity:.6;cursor:wait}#acoulysAuthGate .gate-status{min-height:22px;margin:12px 0 0;color:#d2fff9;font-size:12px;line-height:1.5}#acoulysAuthGate .gate-secondary{margin-top:8px;padding:8px;background:none;border:0;color:#d2fff9;font-size:12px;text-decoration:underline;cursor:pointer}#acoulysAuthGate .gate-foot{margin-top:18px;color:#777084;font-size:10px;letter-spacing:.5px}#acoulysAuthGate .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;text-align:left}#acoulysAuthGate .field{min-width:0}#acoulysAuthGate .field.full{grid-column:1/-1}#acoulysAuthGate .avatar-pick{display:flex;align-items:center;gap:14px;text-align:left;margin:0 auto 18px;max-width:360px}#acoulysAuthGate .avatar-preview{width:70px;height:70px;flex:0 0 70px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#ff4d6d,#7657ff,#27d6c4);color:white;font-size:26px;font-weight:900;border:2px solid #ffffff30}#acoulysAuthGate .avatar-preview img{width:100%;height:100%;object-fit:cover}#acoulysAuthGate .small-note{font-size:11px;color:#a9a0b9;line-height:1.5;margin:6px 0 0;text-align:left}@media(max-width:480px){#acoulysAuthGate{padding:10px}#acoulysAuthGate .gate-card{max-height:calc(100dvh - 20px);border-radius:21px;padding:22px 17px}#acoulysAuthGate .profile-grid{gap:10px}#acoulysAuthGate input,#acoulysAuthGate select{font-size:13px}}';
   document.head.appendChild(style);
 
   const gate = document.createElement("div");
-  gate.id = "musicaliSignInGate";
+  gate.id = "acoulysAuthGate";
   gate.setAttribute("role", "main");
-  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>ACOULYS</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Make it. Loop it. Share it.</h1><p class='gate-sub' id='gateSubtitle'>Sign in with your Gmail. We will send you a one-time verification code.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Gmail address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@gmail.com' required></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Continue with Gmail</button></form><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different Gmail</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div class='gate-foot'>MAKE IT. LOOP IT. SHARE IT. ✦</div></section>";
+  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>ACOULYS</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Make it. Loop it. Share it.</h1><p class='gate-sub' id='gateSubtitle'>Sign in or create an account with your email. We'll send you a verification code.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Email address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@example.com' required><p class='small-note'>Use an email address you can open right now. Acoulys will never ask for your Google password.</p></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Email me a code</button></form><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different email</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div id='gateProfile' hidden></div><div class='gate-foot'>MAKE IT. LOOP IT. SHARE IT. ✦</div></section>";
   document.body.appendChild(gate);
 
   const $ = id => document.getElementById(id);
   let stage = "email";
   let pendingEmail = "";
+  let selectedAvatar = "";
+  let currentUser = null;
 
   function showGate() {
     gate.style.display = "flex";
@@ -41,12 +43,18 @@
     const avatar = mini.querySelector(".avatar");
     const strong = mini.querySelector("strong");
     const muted = mini.querySelector(".muted");
+    const meta = user?.user_metadata || {};
     const email = user?.email || "";
-    if (avatar) avatar.textContent = (user?.user_metadata?.display_name || email || "M").slice(0, 1).toUpperCase();
-    if (strong) strong.textContent = user?.user_metadata?.display_name || (email.split("@")[0] || "Creator");
+    const display = meta.preferred_name || meta.display_name || (email.split("@")[0] || "Creator");
+    if (avatar) {
+      avatar.textContent = meta.avatar_data ? "" : display.slice(0, 1).toUpperCase();
+      avatar.style.backgroundImage = meta.avatar_data ? "url(" + meta.avatar_data + ")" : "";
+      avatar.style.backgroundSize = "cover";
+      avatar.style.backgroundPosition = "center";
+    }
+    if (strong) strong.textContent = display;
     if (muted) muted.textContent = email;
   }
-  function isGmail(email) { return /^[^\s@]+@gmail\.com$/i.test(email); }
   function resetToEmail() {
     stage = "email";
     pendingEmail = "";
@@ -56,11 +64,110 @@
     $("gateEmail").readOnly = false;
     $("gateCode").required = false;
     $("gateCode").value = "";
-    $("gateSubmit").textContent = "Continue with Gmail";
-    $("gateSubtitle").textContent = "Sign in with your Gmail. We will send you a one-time verification code.";
+    $("gateSubmit").textContent = "Email me a code";
+    $("gateSubtitle").textContent = "Sign in or create an account with your email. We'll send you a verification code.";
+    $("gateProfile").hidden = true;
+    $("gateForm").hidden = false;
     setStatus("");
     $("gateEmail").focus();
   }
+  function ageFromDob(value) {
+    if (!value) return null;
+    const birth = new Date(value + "T00:00:00");
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+    return age;
+  }
+  function renderProfile(user) {
+    currentUser = user;
+    stage = "profile";
+    $("gateForm").hidden = true;
+    $("gateChangeEmail").hidden = true;
+    $("gateSubtitle").textContent = "Your account is verified. Let's set up your Acoulys profile.";
+    $("gateProfile").hidden = false;
+    $("gateProfile").innerHTML = "<div class='avatar-pick'><div class='avatar-preview' id='avatarPreview'>A</div><div class='field' style='flex:1'><label for='profileAvatar'>Profile picture (optional)</label><input id='profileAvatar' type='file' accept='image/*'><p class='small-note'>Choose a picture from your device. It will be resized before saving.</p></div></div><form id='profileForm'><div class='profile-grid'><div class='field'><label for='legalName'>Your name</label><input id='legalName' autocomplete='name' maxlength='80' placeholder='Your name' required></div><div class='field'><label for='preferredName'>Name you love to be called</label><input id='preferredName' autocomplete='nickname' maxlength='40' placeholder='Your name or nickname' required></div><div class='field'><label for='dob'>Date of birth</label><input id='dob' type='date' autocomplete='bday' required></div><div class='field'><label for='gender'>Gender</label><select id='gender' required><option value='' selected disabled>Choose one</option><option value='female'>Female</option><option value='male'>Male</option></select></div><div class='field full'><label for='pronouns'>Pronouns</label><select id='pronouns' required><option value='' selected disabled>Choose pronouns</option><option value='he/him'>He / him</option><option value='she/her'>She / her</option></select></div></div><p class='small-note'>Your date of birth helps calculate your age. Only share details you're comfortable providing. You can change your profile details later.</p><button class='gate-primary' id='saveProfile' type='submit'>Create my Acoulys profile</button></form>";
+    const preview = $("avatarPreview");
+    preview.textContent = (user?.email || "A").slice(0, 1).toUpperCase();
+    $("profileAvatar").addEventListener("change", async event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith("image/")) { setStatus("Please choose an image file.", true); return; }
+      if (file.size > 10 * 1024 * 1024) { setStatus("That image is over 10 MB. Choose a smaller image.", true); event.target.value = ""; return; }
+      try {
+        selectedAvatar = await resizeImage(file);
+        preview.innerHTML = "";
+        const img = document.createElement("img");
+        img.src = selectedAvatar;
+        img.alt = "Profile picture preview";
+        preview.appendChild(img);
+        setStatus("Profile picture ready.");
+      } catch (error) {
+        setStatus("That picture could not be opened. Try another image.", true);
+      }
+    });
+    $("profileForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = $("saveProfile");
+      button.disabled = true;
+      const dob = $("dob").value;
+      const age = ageFromDob(dob);
+      try {
+        if (age === null || age < 13 || age > 120) {
+          setStatus("Enter a valid date of birth. Acoulys accounts are for people aged 13 and older.", true);
+          return;
+        }
+        const metadata = {
+          display_name: $("legalName").value.trim(),
+          preferred_name: $("preferredName").value.trim(),
+          date_of_birth: dob,
+          age: age,
+          gender: $("gender").value,
+          pronouns: $("pronouns").value,
+          profile_complete: true
+        };
+        if (!metadata.display_name || !metadata.preferred_name) {
+          setStatus("Please fill in both name fields.", true);
+          return;
+        }
+        if (selectedAvatar) metadata.avatar_data = selectedAvatar;
+        setStatus("Saving your profile…");
+        const { data, error } = await client.auth.updateUser({ data: metadata });
+        if (error) throw error;
+        currentUser = data.user || currentUser;
+        paintUser(currentUser);
+        setStatus("Your Acoulys profile is ready. Welcome in!");
+        setTimeout(hideGate, 700);
+      } catch (error) {
+        setStatus(error?.message || "We couldn't save your profile. Please try again.", true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+  function resizeImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read image"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Could not decode image"));
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const size = 256;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          const side = Math.min(img.width, img.height);
+          ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+          resolve(canvas.toDataURL("image/jpeg", 0.68));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   if (!client) {
     showGate();
     setStatus("The sign-in service could not load. Refresh this page and try again.", true);
@@ -75,8 +182,8 @@
     try {
       if (stage === "email") {
         const email = $("gateEmail").value.trim().toLowerCase();
-        if (!isGmail(email)) {
-          setStatus("Enter a Gmail address ending in @gmail.com.", true);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          setStatus("Enter a valid email address.", true);
           return;
         }
         setStatus("Sending your verification code…");
@@ -88,11 +195,11 @@
         $("gateCodeWrap").hidden = false;
         $("gateCode").required = true;
         $("gateChangeEmail").hidden = false;
-        $("gateSubmit").textContent = "Verify code and sign in";
-        $("gateSubtitle").textContent = "Check your Gmail inbox for the 6-digit code. If it is missing, check Spam.";
+        $("gateSubmit").textContent = "Verify code";
+        $("gateSubtitle").textContent = "Check your inbox for the 6-digit code. If it is missing, check Spam or Junk.";
         setStatus("Code sent to " + pendingEmail + ".");
         $("gateCode").focus();
-      } else {
+      } else if (stage === "code") {
         const token = $("gateCode").value.trim();
         if (!/^[0-9]{6}$/.test(token)) {
           setStatus("Enter the 6-digit code from your email.", true);
@@ -101,10 +208,16 @@
         setStatus("Verifying your code…");
         const { data, error } = await client.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
         if (error) throw error;
-        if (!data?.session) throw new Error("No sign-in session was returned. Please try again.");
-        paintUser(data.user);
-        setStatus("You're in. Welcome to Acoulys!");
-        setTimeout(hideGate, 450);
+        if (!data?.session || !data?.user) throw new Error("No sign-in session was returned. Please try again.");
+        currentUser = data.user;
+        if (data.user.user_metadata?.profile_complete) {
+          paintUser(data.user);
+          setStatus("You're signed in. Welcome back!");
+          setTimeout(hideGate, 450);
+        } else {
+          renderProfile(data.user);
+          setStatus("");
+        }
       }
     } catch (error) {
       setStatus(error?.message || "We could not complete sign-in. Please try again.", true);
@@ -114,17 +227,19 @@
   });
 
   client.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) paintUser(session.user);
-    else showGate();
+    if (session?.user) {
+      paintUser(session.user);
+    } else {
+      showGate();
+    }
   });
-  // A saved session must not bypass the requested Gmail-code screen on page load.
   showGate();
   client.auth.getSession().then(({ data, error }) => {
-    if (error) { setStatus("Please sign in with your Gmail to continue.", true); return; }
+    if (error) { setStatus("Please sign in with your email to continue.", true); return; }
     if (data?.session?.user) paintUser(data.session.user);
   }).catch(error => {
     console.error("Acoulys session check failed:", error);
-    setStatus("Please sign in with your Gmail to continue.", true);
+    setStatus("Please sign in with your email to continue.", true);
   });
   window.acoulysAuth = { client, open: showGate, close: hideGate };
 })();
