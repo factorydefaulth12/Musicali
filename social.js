@@ -272,30 +272,35 @@
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) throw new Error("Your sign-in session expired. Sign in again before uploading.");
     const baseUrl = client.supabaseUrl.endsWith("/") ? client.supabaseUrl.slice(0, -1) : client.supabaseUrl;
-    const upload = new tus.Upload(blob, {
-      endpoint: baseUrl + "/storage/v1/upload/resumable",
-      retryDelays: [0, 1000, 3000, 5000, 10000],
-      chunkSize: 6 * 1024 * 1024,
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      headers: {
-        authorization: "Bearer " + accessToken,
-        apikey: client.supabaseKey
-      },
-      metadata: {
-        bucketName: "musicali-media",
-        objectName: path,
-        contentType: blob.type || "application/octet-stream",
-        cacheControl: "3600"
-      },
-      onProgress(bytesUploaded, bytesTotal) {
-        if (button && bytesTotal > 0) button.textContent = "Uploading " + Math.min(99, Math.round(bytesUploaded / bytesTotal * 100)) + "%…";
-      }
-    });
     await new Promise((resolve, reject) => {
-      upload.options.onError = reject;
-      upload.options.onSuccess = resolve;
-      try { upload.start(); } catch (error) { reject(error); }
+      let upload;
+      try {
+        upload = new tus.Upload(blob, {
+          endpoint: baseUrl + "/storage/v1/upload/resumable",
+          retryDelays: [0, 1000, 3000, 5000, 10000],
+          chunkSize: 6 * 1024 * 1024,
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          headers: {
+            authorization: "Bearer " + accessToken,
+            apikey: client.supabaseKey
+          },
+          metadata: {
+            bucketName: "musicali-media",
+            objectName: path,
+            contentType: blob.type || "application/octet-stream",
+            cacheControl: "3600"
+          },
+          onProgress(bytesUploaded, bytesTotal) {
+            if (button && bytesTotal > 0) button.textContent = "Uploading " + Math.min(99, Math.round(bytesUploaded / bytesTotal * 100)) + "%…";
+          },
+          onError: reject,
+          onSuccess: resolve
+        });
+        upload.start();
+      } catch (error) {
+        reject(error);
+      }
     });
   }
   async function publishToCloud({ blob = null, mediaType = "text", caption = "", fileName = "" }) {
