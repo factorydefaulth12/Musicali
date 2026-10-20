@@ -223,11 +223,11 @@
     if (!signedInUser) {
       say("Sign in to publish to the community.");
       window.acoulysAuth?.open();
-      return;
+      return false;
     }
-    if (mediaType !== "text" && !blob) { say("Create or import a photo, video, or audio file first."); return; }
+    if (mediaType !== "text" && !blob) { say("Create or import a photo, video, or audio file first."); return false; }
     busy = true;
-    const button = $("publishPost") || $("blogPublish");
+    const button = mediaType === "text" ? $("blogPublish") : $("publishPost");
     if (button) { button.disabled = true; button.dataset.originalText ||= button.textContent; button.textContent = "Publishing…"; }
     let path = null;
     try {
@@ -252,6 +252,7 @@
         }
       }
       await loadSocialData();
+      return true;
     } catch (error) {
       if (path) {
         try { await client.storage.from("musicali-media").remove([path]); } catch (_) {}
@@ -259,6 +260,7 @@
       console.error("Acoulys publish failed:", error);
       const message = error?.message || "Publishing failed.";
       say(message.includes("musicali-media") || message.includes("Bucket") ? "Media storage is not ready yet. Run backend/social-migration.sql in Supabase, then retry." : "Could not publish: " + message);
+      return false;
     } finally {
       busy = false;
       if (button) { button.disabled = false; if (button.dataset.originalText) button.textContent = button.dataset.originalText; }
@@ -272,14 +274,11 @@
     const mediaType = item.kind === "blog" || item.type === "text/plain" ? "text" : item.type?.startsWith("image/") ? "image" : item.type?.startsWith("video/") ? "video" : item.type?.startsWith("audio/") ? "audio" : "";
     if (!mediaType) { say("This file type cannot be published yet."); return; }
     const caption = mediaType === "text" ? ((item.title ? item.title + "\n\n" : "") + (item.content || item.caption || "")) : (item.caption || "");
-    await publishToCloud({ blob: mediaType === "text" ? null : item.blob, mediaType, caption, fileName: item.name || "" });
-    // Keep the local draft intact if the upload failed; on success it is safe to remove it from Drafts.
-    if (!busy) {
-      const { data } = await client.from("posts").select("id").eq("user_id", signedInUser.id).eq("caption", caption).order("created_at", { ascending: false }).limit(1);
-      if (data?.length) {
-        await window.deleteLibraryItem(id);
-        if (typeof window.renderPage === "function") await window.renderPage("Drafts");
-      }
+    const published = await publishToCloud({ blob: mediaType === "text" ? null : item.blob, mediaType, caption, fileName: item.name || "" });
+    // Keep the local draft intact if publishing fails.
+    if (published) {
+      await window.deleteLibraryItem(id);
+      if (typeof window.renderPage === "function") await window.renderPage("Drafts");
     }
   }
   async function toggleLike(postId) {
