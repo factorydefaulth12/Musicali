@@ -10,6 +10,9 @@
   let remotePosts = [];
   let followedIds = new Set();
   let busy = false;
+  const socialStyle = document.createElement("style");
+  socialStyle.textContent = ".social-media{margin-top:12px;min-width:0}.social-media img{width:100%;max-height:640px;object-fit:contain;border-radius:12px;background:#09070f}.social-media video{display:block;width:100%;max-height:640px;border-radius:12px;background:#09070f}.social-text-post{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:16px 2px;font-family:Georgia,serif;font-size:16px}.social-post .post-actions{align-items:center;flex-wrap:wrap}.social-post .post-actions button{padding:4px 0}.social-post .post-actions button:hover{color:var(--accent2)}";
+  document.head.appendChild(socialStyle);
   const escape = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
   const short = n => {
     const value = Number(n || 0);
@@ -238,6 +241,7 @@
     const button = mediaType === "text" ? $("blogPublish") : $("publishPost");
     if (button) { button.disabled = true; button.dataset.originalText ||= button.textContent; button.textContent = "Publishing…"; }
     let path = null;
+    let postCreated = false;
     try {
       if (blob) {
         const ext = (fileName.split(".").pop() || ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "video/mp4":"mp4", "audio/mpeg":"mp3" }[blob.type] || blob.type.split("/")[1] || "bin")).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "bin";
@@ -248,6 +252,7 @@
       const row = { user_id: signedInUser.id, caption: String(caption || "").trim(), media_path: path, media_type: mediaType, visibility: "public" };
       const { data, error } = await client.from("posts").insert(row).select("id").single();
       if (error) throw error;
+      postCreated = true;
       if (mediaType === "text") {
         if (typeof window.closeBlogComposer === "function") window.closeBlogComposer();
         else $("blogModal") && ($("blogModal").style.display = "none");
@@ -262,10 +267,14 @@
       await loadSocialData();
       return true;
     } catch (error) {
-      if (path) {
+      if (path && !postCreated) {
         try { await client.storage.from("musicali-media").remove([path]); } catch (_) {}
       }
       console.error("Acoulys publish failed:", error);
+      if (postCreated) {
+        say("Your post was published, but the feed could not refresh. Refresh Acoulys to see it.");
+        return true;
+      }
       const message = error?.message || "Publishing failed.";
       say(message.includes("musicali-media") || message.includes("Bucket") ? "Media storage is not ready yet. Run backend/social-migration.sql in Supabase, then retry." : "Could not publish: " + message);
       return false;
