@@ -229,6 +229,75 @@
     if (postsRes.error || followersRes.error || followingRes.error) return;
     box.innerHTML = '<span class="pill">✦ ' + short(postsRes.count || 0) + ' posts</span><span class="pill">♧ ' + short(followersRes.count || 0) + ' followers</span><span class="pill">↗ ' + short(followingRes.count || 0) + ' following</span>';
   }
+  // Larger uploads use Supabase Storage's resumable TUS endpoint. The supplied
+  // TikTok example's two-stage pattern applies, but its upload URL and headers do not.
+  let tusClientPromise = null;
+  function loadTusClient() {
+    if (window.tus?.Upload) return Promise.resolve(window.tus);
+    if (tusClientPromise) return tusClientPromise;
+    tusClientPromise = new Promise((resolve, reject) => {
+      const sources = [
+        "https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js",
+        "https://unpkg.com/tus-js-client@4.3.1/dist/tus.min.js"
+      ];
+      const attempt = index => {
+        if (window.tus?.Upload) return resolve(window.tus);
+        if (index >= sources.length) { tusClientPromise = null; return reject(new Error("Could not load the resumable upload library. Check your connection and try again.")); }
+        const script = document.createElement("script");
+        script.src = sources[index];
+        script.async = true;
+        script.onload = () => window.tus?.Upload ? resolve(window.tus) : attempt(index + 1);
+        script.onerror = () => { script.remove(); attempt(index + 1); };
+        document.head.appendChild(script);
+      };
+      attempt(0);
+    });
+    return tusClientPromise;
+  }
+  async function uploadMediaToCloud(path, blob, button) {
+    // Small files use the simple Storage upload. Larger files upload in resumable chunks.
+    const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
+    if (blob.size <= RESUMABLE_THRESHOLD) {
+      const { error } = await client.storage.from("musicali-media").upload(path, blob, {
+        contentType: blob.type || "application/octet-stream",
+        cacheControl: "3600",
+        upsert: false
+      });
+      if (error) throw error;
+      return;
+    }
+    const tus = await loadTusClient();
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError) throw sessionError;
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) throw new Error("Your sign-in session expired. Sign in again before uploading.");
+    const baseUrl = client.supabaseUrl.endsWith("/") ? client.supabaseUrl.slice(0, -1) : client.supabaseUrl;
+    const upload = new tus.Upload(blob, {
+      endpoint: baseUrl + "/storage/v1/upload/resumable",
+      retryDelays: [0, 1000, 3000, 5000, 10000],
+      chunkSize: 6 * 1024 * 1024,
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      headers: {
+        authorization: "Bearer " + accessToken,
+        apikey: client.supabaseKey
+      },
+      metadata: {
+        bucketName: "musicali-media",
+        objectName: path,
+        contentType: blob.type || "application/octet-stream",
+        cacheControl: "3600"
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        if (button && bytesTotal > 0) button.textContent = "Uploading " + Math.min(99, Math.round(bytesUploaded / bytesTotal * 100)) + "%…";
+      }
+    });
+    await new Promise((resolve, reject) => {
+      upload.options.onError = reject;
+      upload.options.onSuccess = resolve;
+      try { upload.start(); } catch (error) { reject(error); }
+    });
+  }
   async function publishToCloud({ blob = null, mediaType = "text", caption = "", fileName = "" }) {
     if (busy) return;
     if (!signedInUser) {
@@ -246,8 +315,7 @@
       if (blob) {
         const ext = (fileName.split(".").pop() || ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "video/mp4":"mp4", "audio/mpeg":"mp3" }[blob.type] || blob.type.split("/")[1] || "bin")).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "bin";
         path = signedInUser.id + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 9) + "." + ext;
-        const { error: uploadError } = await client.storage.from("musicali-media").upload(path, blob, { contentType: blob.type || "application/octet-stream", upsert: false });
-        if (uploadError) throw uploadError;
+        await uploadMediaToCloud(path, blob, button);
       }
       const row = { user_id: signedInUser.id, caption: String(caption || "").trim(), media_path: path, media_type: mediaType, visibility: "public" };
       const { data, error } = await client.from("posts").insert(row).select("id").single();
