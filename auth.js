@@ -14,7 +14,7 @@
   const gate = document.createElement("div");
   gate.id = "acoulysAuthGate";
   gate.setAttribute("role", "main");
-  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>ACOULYS</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Make it. Loop it. Share it.</h1><p class='gate-sub' id='gateSubtitle'>Sign in or create an account with your email. We'll send you a verification code.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Email address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@example.com' required><div id='loginPasswordWrap' hidden><label for='loginPassword'>Acoulys password</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Your Acoulys password'></div><p class='small-note'>The password is for Acoulys, never your Google account.</p></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Email me a code</button></form><button class='gate-secondary' id='gatePasswordSignIn' type='button'>Already have an Acoulys password? Sign in</button><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different email</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div id='gateProfile' hidden></div><div class='gate-foot'>MAKE IT. LOOP IT. SHARE IT. ✦</div></section>";
+  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>ACOULYS</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Make it. Loop it. Share it.</h1><p class='gate-sub' id='gateSubtitle'>Sign in or create an account with your email. We'll send you a secure sign-in link.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Email address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@example.com' required><div id='loginPasswordWrap' hidden><label for='loginPassword'>Acoulys password</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Your Acoulys password'></div><p class='small-note'>The password is for Acoulys, never your Google account.</p></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Email me a code</button></form><button class='gate-secondary' id='gatePasswordSignIn' type='button'>Already have an Acoulys password? Sign in</button><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different email</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div id='gateProfile' hidden></div><div class='gate-foot'>MAKE IT. LOOP IT. SHARE IT. ✦</div></section>";
   document.body.appendChild(gate);
 
   const $ = id => document.getElementById(id);
@@ -64,8 +64,8 @@
     $("gateEmail").readOnly = false;
     $("gateCode").required = false;
     $("gateCode").value = "";
-    $("gateSubmit").textContent = "Email me a code";
-    $("gateSubtitle").textContent = "Sign in or create an account with your email. We'll send you a verification code.";
+    $("gateSubmit").textContent = "Email me a sign-in link";
+    $("gateSubtitle").textContent = "Sign in or create an account with your email. We'll send you a secure sign-in link.";
     $("gateProfile").hidden = true;
     $("gateForm").hidden = false;
     setStatus("");
@@ -230,38 +230,23 @@
           setStatus("Enter a valid email address.", true);
           return;
         }
-        setStatus("Sending your verification code…");
+        setStatus("Sending your sign-in link…");
         const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: "https://factorydefaulth12.github.io/Musicali/" } });
         if (error) throw error;
         pendingEmail = email;
-        stage = "code";
-        $("gateEmailWrap").hidden = true;
-        $("gateCodeWrap").hidden = false;
-        $("gateCode").required = true;
+        stage = "magic-link";
+        $("gateEmail").readOnly = true;
+        $("gateCodeWrap").hidden = true;
+        $("gateCode").required = false;
         $("gateChangeEmail").hidden = false;
-        $("gateSubmit").textContent = "Verify code";
-        $("gateSubtitle").textContent = "Check your inbox for the 6-digit code. If it is missing, check Spam or Junk.";
-        setStatus("Code sent to " + pendingEmail + ".");
-        $("gateCode").focus();
-      } else if (stage === "code") {
-        const token = $("gateCode").value.trim();
-        if (!/^[0-9]{6}$/.test(token)) {
-          setStatus("Enter the 6-digit code from your email.", true);
-          return;
-        }
-        setStatus("Verifying your code…");
-        const { data, error } = await client.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
+        $("gateSubmit").textContent = "Resend sign-in link";
+        $("gateSubtitle").textContent = "Open the sign-in email from Supabase and click its link. It will bring you back to Acoulys automatically. Check Spam or Junk if needed.";
+        setStatus("Sign-in link sent to " + pendingEmail + ". Open the email and click the link to continue.");
+      } else if (stage === "magic-link") {
+        setStatus("Sending another sign-in link…");
+        const { error } = await client.auth.signInWithOtp({ email: pendingEmail, options: { shouldCreateUser: true, emailRedirectTo: "https://factorydefaulth12.github.io/Musicali/" } });
         if (error) throw error;
-        if (!data?.session || !data?.user) throw new Error("No sign-in session was returned. Please try again.");
-        currentUser = data.user;
-        if (data.user.user_metadata?.profile_complete) {
-          paintUser(data.user);
-          setStatus("You're signed in. Welcome back!");
-          setTimeout(hideGate, 450);
-        } else {
-          renderProfile(data.user);
-          setStatus("");
-        }
+        setStatus("A fresh sign-in link was sent to " + pendingEmail + ". Use the newest email.");
       }
     } catch (error) {
       setStatus(error?.message || "We could not complete sign-in. Please try again.", true);
@@ -270,18 +255,25 @@
     }
   });
 
-  client.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) {
-      paintUser(session.user);
+  function handleAuthenticatedUser(user) {
+    if (!user) { showGate(); return; }
+    currentUser = user;
+    if (user.user_metadata?.profile_complete) {
+      paintUser(user);
+      hideGate();
     } else {
       showGate();
+      renderProfile(user);
     }
+  }
+  client.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) handleAuthenticatedUser(session.user);
+    else showGate();
   });
   showGate();
   client.auth.getSession().then(({ data, error }) => {
     if (error) { setStatus("Please sign in with your email to continue.", true); return; }
-    if (data?.session?.user) paintUser(data.session.user);
-  }).catch(error => {
+    if (data?.session?.user) handleAuthenticatedUser(data.session.user);  }).catch(error => {
     console.error("Acoulys session check failed:", error);
     setStatus("Please sign in with your email to continue.", true);
   });
