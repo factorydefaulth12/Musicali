@@ -66,14 +66,55 @@
       renderSignedOut();
       return;
     }
-    await ensureProfile(signedInUser);
+
+    // The feed's core query intentionally avoids PostgREST relationship joins.
+    // A broken/missing optional relationship must not blank the entire feed.
+    try {
+      await ensureProfile(signedInUser);
+    } catch (profileError) {
+      console.warn("Acoulys profile setup needs attention; continuing feed load:", profileError);
+    }
     const { data, error } = await client.from("posts")
-      .select("id,user_id,caption,media_path,media_type,visibility,created_at,view_count,profiles(username,display_name),likes(count),comments(count)")
+      .select("id,user_id,caption,media_path,media_type,visibility,created_at,view_count")
       .eq("visibility", "public").order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
-    remotePosts = data || [];
-    const authorIds = [...new Set(remotePosts.map(p => p.user_id).filter(Boolean))];
-    const postIds = remotePosts.map(p => p.id);
+    remotePosts = (data || []).map(post => ({
+      ...post,
+      profiles: { username: "creator", display_name: "Creator" },
+      likes: [{ count: 0 }],
+      comments: [{ count: 0 }]
+    }));
+
+    // Enrichment is deliberately best-effort. A count or profile lookup error
+    // should be logged clearly, but must not turn a readable feed into an error page.
+    const authorIdsForProfiles = [...new Set(remotePosts.map(p => p.user_id).filter(Boolean))];
+    const postIdsForCounts = remotePosts.map(p => p.id);
+    try {
+      if (authorIdsForProfiles.length) {
+        const { data: profileRows, error: profilesError } = await client.from("profiles")
+          .select("id,username,display_name").in("id", authorIdsForProfiles);
+        if (profilesError) throw profilesError;
+        const profileMap = new Map((profileRows || []).map(profile => [profile.id, profile]));
+        remotePosts.forEach(post => { post.profiles = profileMap.get(post.user_id) || post.profiles; });
+      }
+      if (postIdsForCounts.length) {
+        const [likesResult, commentsResult] = await Promise.all([
+          client.from("likes").select("post_id").in("post_id", postIdsForCounts),
+          client.from("comments").select("post_id").in("post_id", postIdsForCounts)
+        ]);
+        if (likesResult.error) throw likesResult.error;
+        if (commentsResult.error) throw commentsResult.error;
+        const likesCounts = {}, commentsCounts = {};
+        (likesResult.data || []).forEach(row => { likesCounts[row.post_id] = (likesCounts[row.post_id] || 0) + 1; });
+        (commentsResult.data || []).forEach(row => { commentsCounts[row.post_id] = (commentsCounts[row.post_id] || 0) + 1; });
+        remotePosts.forEach(post => {
+          post.likes = [{ count: likesCounts[post.id] || 0 }];
+          post.comments = [{ count: commentsCounts[post.id] || 0 }];
+        });
+      }
+    } catch (enrichmentError) {
+      console.warn("Acoulys feed loaded, but profile/like/comment details could not be refreshed:", enrichmentError);
+    }
     followedIds = new Set();
     if (authorIds.length) {
       const [followingRes, followerRes] = await Promise.all([
