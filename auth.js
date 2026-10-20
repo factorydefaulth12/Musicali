@@ -14,7 +14,7 @@
   const gate = document.createElement("div");
   gate.id = "acoulysAuthGate";
   gate.setAttribute("role", "main");
-  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>ACOULYS</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Make it. Loop it. Share it.</h1><p class='gate-sub' id='gateSubtitle'>Sign in or create an account with your email. We'll send you a verification code.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Email address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@example.com' required><p class='small-note'>Use an email address you can open right now. Acoulys will never ask for your Google password.</p></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Email me a code</button></form><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different email</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div id='gateProfile' hidden></div><div class='gate-foot'>MAKE IT. LOOP IT. SHARE IT. ✦</div></section>";
+  gate.innerHTML = "<section class='gate-card' aria-labelledby='gateTitle'><div class='gate-mark'>ACOULYS</div><div class='gate-spark' aria-hidden='true'></div><h1 id='gateTitle'>Make it. Loop it. Share it.</h1><p class='gate-sub' id='gateSubtitle'>Sign in or create an account with your email. We'll send you a verification code.</p><form id='gateForm'><div id='gateEmailWrap'><label for='gateEmail'>Email address</label><input id='gateEmail' type='email' inputmode='email' autocomplete='email' autocapitalize='none' spellcheck='false' placeholder='you@example.com' required><div id='loginPasswordWrap' hidden><label for='loginPassword'>Acoulys password</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Your Acoulys password'></div><p class='small-note'>The password is for Acoulys, never your Google account.</p></div><div id='gateCodeWrap' hidden><label for='gateCode'>6-digit verification code</label><input id='gateCode' type='text' inputmode='numeric' autocomplete='one-time-code' pattern='[0-9]{6}' maxlength='6' placeholder='••••••' aria-describedby='gateStatus'></div><button class='gate-primary' id='gateSubmit' type='submit'>Email me a code</button></form><button class='gate-secondary' id='gatePasswordSignIn' type='button'>Already have an Acoulys password? Sign in</button><button class='gate-secondary' id='gateChangeEmail' type='button' hidden>Use a different email</button><p class='gate-status' id='gateStatus' role='status' aria-live='polite'></p><div id='gateProfile' hidden></div><div class='gate-foot'>MAKE IT. LOOP IT. SHARE IT. ✦</div></section>";
   document.body.appendChild(gate);
 
   const $ = id => document.getElementById(id);
@@ -69,6 +69,9 @@
     $("gateProfile").hidden = true;
     $("gateForm").hidden = false;
     setStatus("");
+    $("loginPasswordWrap").hidden = true;
+    $("loginPassword").value = "";
+    $("gatePasswordSignIn").textContent = "Already have an Acoulys password? Sign in";
     $("gateEmail").focus();
   }
   function ageFromDob(value) {
@@ -86,7 +89,7 @@
     $("gateChangeEmail").hidden = true;
     $("gateSubtitle").textContent = "Your account is verified. Let's set up your Acoulys profile.";
     $("gateProfile").hidden = false;
-    $("gateProfile").innerHTML = "<div class='avatar-pick'><div class='avatar-preview' id='avatarPreview'>A</div><div class='field' style='flex:1'><label for='profileAvatar'>Profile picture (optional)</label><input id='profileAvatar' type='file' accept='image/*'><p class='small-note'>Choose a picture from your device. It will be resized before saving.</p></div></div><form id='profileForm'><div class='profile-grid'><div class='field'><label for='legalName'>Your name</label><input id='legalName' autocomplete='name' maxlength='80' placeholder='Your name' required></div><div class='field'><label for='preferredName'>Name you love to be called</label><input id='preferredName' autocomplete='nickname' maxlength='40' placeholder='Your name or nickname' required></div><div class='field'><label for='dob'>Date of birth</label><input id='dob' type='date' autocomplete='bday' required></div><div class='field'><label for='gender'>Gender</label><select id='gender' required><option value='' selected disabled>Choose one</option><option value='female'>Female</option><option value='male'>Male</option></select></div><div class='field full'><label for='pronouns'>Pronouns</label><select id='pronouns' required><option value='' selected disabled>Choose pronouns</option><option value='he/him'>He / him</option><option value='she/her'>She / her</option></select></div></div><p class='small-note'>Your date of birth helps calculate your age. Only share details you're comfortable providing. You can change your profile details later.</p><button class='gate-primary' id='saveProfile' type='submit'>Create my Acoulys profile</button></form>";
+    $("gateProfile").innerHTML = "<div class='avatar-pick'><div class='avatar-preview' id='avatarPreview'>A</div><div class='field' style='flex:1'><label for='profileAvatar'>Profile picture (optional)</label><input id='profileAvatar' type='file' accept='image/*'><p class='small-note'>Choose a picture from your device. It will be resized before saving.</p></div></div><form id='profileForm'><div class='profile-grid'><div class='field'><label for='legalName'>Your name</label><input id='legalName' autocomplete='name' maxlength='80' placeholder='Your name' required></div><div class='field'><label for='preferredName'>Name you love to be called</label><input id='preferredName' autocomplete='nickname' maxlength='40' placeholder='Your name or nickname' required></div><div class='field'><label for='dob'>Date of birth</label><input id='dob' type='date' autocomplete='bday' required></div><div class='field'><label for='gender'>Gender</label><select id='gender' required><option value='' selected disabled>Choose one</option><option value='female'>Female</option><option value='male'>Male</option></select></div><div class='field full'><label for='pronouns'>Pronouns</label><select id='pronouns' required><option value='' selected disabled>Choose pronouns</option><option value='he/him'>He / him</option><option value='she/her'>She / her</option></select></div><div class='field'><label for='newPassword'>Create Acoulys password</label><input id='newPassword' type='password' autocomplete='new-password' minlength='8' placeholder='At least 8 characters' required></div><div class='field'><label for='confirmPassword'>Confirm password</label><input id='confirmPassword' type='password' autocomplete='new-password' minlength='8' placeholder='Type it again' required></div></div><p class='small-note'>Your date of birth helps calculate your age. Only share details you're comfortable providing. You can change your profile details later.</p><button class='gate-primary' id='saveProfile' type='submit'>Create my Acoulys profile</button></form>";
     const preview = $("avatarPreview");
     preview.textContent = (user?.email || "A").slice(0, 1).toUpperCase();
     $("profileAvatar").addEventListener("change", async event => {
@@ -126,13 +129,17 @@
           pronouns: $("pronouns").value,
           profile_complete: true
         };
+        const newPassword = $('newPassword').value;
+        const confirmPassword = $('confirmPassword').value;
+        if (newPassword.length < 8) { setStatus('Your Acoulys password must be at least 8 characters.', true); return; }
+        if (newPassword !== confirmPassword) { setStatus('Those passwords do not match. Please check them.', true); return; }
         if (!metadata.display_name || !metadata.preferred_name) {
           setStatus("Please fill in both name fields.", true);
           return;
         }
         if (selectedAvatar) metadata.avatar_data = selectedAvatar;
         setStatus("Saving your profile…");
-        const { data, error } = await client.auth.updateUser({ data: metadata });
+        const { data, error } = await client.auth.updateUser({ password: newPassword, data: metadata });
         if (error) throw error;
         currentUser = data.user || currentUser;
         paintUser(currentUser);
@@ -175,6 +182,43 @@
   }
 
   $("gateChangeEmail").addEventListener("click", resetToEmail);
+  $("gatePasswordSignIn").addEventListener("click", async () => {
+    const email = $("gateEmail").value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus("Enter your email address first.", true);
+      $("gateEmail").focus();
+      return;
+    }
+    if ($("loginPasswordWrap").hidden) {
+      $("loginPasswordWrap").hidden = false;
+      $("loginPassword").focus();
+      $("gatePasswordSignIn").textContent = "Sign in with Acoulys password";
+      setStatus("Enter your Acoulys password, then press the sign-in button again.");
+      return;
+    }
+    const password = $("loginPassword").value;
+    if (!password) { setStatus("Enter your Acoulys password.", true); $("loginPassword").focus(); return; }
+    const button = $("gatePasswordSignIn");
+    button.disabled = true;
+    try {
+      setStatus("Signing in…");
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      if (!data?.user) throw new Error("No account was returned. Please try again.");
+      if (data.user.user_metadata?.profile_complete) {
+        paintUser(data.user);
+        setStatus("You're signed in. Welcome back!");
+        setTimeout(hideGate, 450);
+      } else {
+        renderProfile(data.user);
+        setStatus("");
+      }
+    } catch (error) {
+      setStatus(error?.message || "We couldn't sign you in. Check your email and Acoulys password.", true);
+    } finally {
+      button.disabled = false;
+    }
+  });
   $("gateForm").addEventListener("submit", async event => {
     event.preventDefault();
     const submit = $("gateSubmit");
