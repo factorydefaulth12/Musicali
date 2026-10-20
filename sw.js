@@ -1,4 +1,4 @@
-const CACHE_NAME = "acoulys-shell-v1";
+const CACHE_NAME = "acoulys-shell-v2";
 const SHELL_URLS = ["./", "./index.html", "./manifest.webmanifest", "./favicon.svg"];
 
 self.addEventListener("install", event => {
@@ -24,15 +24,18 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  if (request.mode === "navigate") {
+  const refreshFirst = request.mode === "navigate" ||
+    /\\.(?:html|js|css|webmanifest)(?:$|\\?)/i.test(url.pathname + url.search);
+
+  if (refreshFirst) {
     event.respondWith(
       fetch(request).then(response => {
         if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         }
         return response;
-      }).catch(() => caches.match("./index.html"))
+      }).catch(() => caches.match(request).then(cached => cached || caches.match("./index.html")))
     );
     return;
   }
