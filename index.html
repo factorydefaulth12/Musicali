@@ -120,6 +120,41 @@
 .mobile-nav button.active{color:#ff7b91}.mobile-nav button:nth-child(3){color:#fff}.mobile-nav button:nth-child(3) span:first-child{width:39px;height:31px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#ff4d6d,#7657ff);font-size:24px;box-shadow:0 5px 18px #7657ff44}
 .gradient-btn{color:#fff;text-shadow:0 1px 2px #24133340}
 @media(max-width:700px){.hero{border-radius:20px}.post{border-radius:14px}.cover{aspect-ratio:9/12}.post[data-orientation="horizontal"] .cover{aspect-ratio:16/9}}
+
+/* Acoulys composer refresh: post-first, friendly and compact */
+#studioPanel .studio-workspace{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start;max-width:1180px;margin:0 auto;padding:22px}
+#studioPanel .studio-side-panel{grid-column:1;grid-row:1;position:relative;top:auto;border:1px solid #ffffff18;border-radius:22px;padding:22px;background:#f8f7fb;color:#24202c;box-shadow:0 18px 50px #0002}
+#studioPanel .studio-side-kicker{color:#8b78a7;letter-spacing:1.3px}
+#studioPanel .studio-side-heading h2{font-size:24px;color:#282231;margin:6px 0 3px}
+#studioPanel .studio-side-heading p{color:#777080;margin-bottom:16px}
+#studioPanel .studio-caption-label{margin:14px 0 8px;color:#655c70}
+#studioPanel #postCaption{background:#fff;color:#282231;border:1px solid #e7e1ed;border-radius:15px;min-height:116px;font:14px/1.55 inherit;padding:14px}
+#studioPanel #postCaption::placeholder{color:#a19aa9}
+#studioPanel .studio-import-button{margin-top:14px;padding:15px;border:1px solid #e5dced;border-radius:15px;background:#f0e9fb;color:#63439a;font-size:13px;font-weight:800}
+#studioPanel .studio-action-stack{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#studioPanel .studio-action-stack button{border-radius:13px;min-height:44px;font-size:12px;text-align:center;padding:11px}
+#studioPanel #publishPost{grid-column:1/-1;text-align:center;background:linear-gradient(110deg,#b99af8,#edb5ee);color:#241632;border:0;font-weight:850;min-height:48px}
+#studioPanel #capturePhoto{background:#fff;border:1px solid #e5dced;color:#4f3b69}
+#studioPanel .studio-action-secondary{background:#fff;border:1px solid #e5dced;color:#51485d}
+#studioPanel .studio-action-publish:disabled{opacity:.48}
+#studioPanel .studio-footnote{color:#8a8294;font-size:11px;margin-bottom:0}
+#studioPanel .studio-main-camera{grid-column:2;grid-row:1;min-width:0}
+#studioPanel .studio-viewfinder-frame{height:min(47vh,460px);min-height:280px;border-radius:20px}
+#studioPanel .studio-capture-controls{padding:14px 8px}
+#studioPanel .studio-mode-selector{gap:7px;flex-wrap:wrap}
+#studioPanel .studio-mode-selector button{font-size:9px}
+#studioPanel .studio-shutter-zone{gap:10px}
+#studioPanel .studio-recording-tools{background:#15121d;border-radius:14px}
+#studioPanel .studio-camera-intro{display:none}
+@media(max-width:760px){
+ #studioPanel .studio-workspace{display:flex;flex-direction:column;padding:12px;gap:14px}
+ #studioPanel .studio-side-panel{order:0;width:100%;padding:17px;border-radius:18px}
+ #studioPanel .studio-main-camera{order:1;width:100%}
+ #studioPanel .studio-viewfinder-frame{height:36vh;min-height:220px;max-height:340px}
+ #studioPanel .studio-action-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #studioPanel #publishPost{grid-column:1/-1}
+ #studioPanel .studio-side-heading h2{font-size:22px}
+}
 </style>
 </head>
 <body>
@@ -360,7 +395,7 @@ if ("serviceWorker" in navigator) {
     auth.src = "auth.js?v=20261020-social-1";
     auth.onload = function () {
       const social = document.createElement("script");
-      social.src = "social.js?v=20261021-social-8";
+      social.src = "social.js?v=20261021-social-9";
       social.onerror = function () {
         console.error("Acoulys social features could not load. Refresh and try again.");
       };
