@@ -614,9 +614,12 @@
   }
   async function listGroupMessages(groupId) {
     if(!signedInUser)return {ok:false,message:"Sign in to read group messages."};
-    const {data,error}=await client.from("group_chat_messages").select("id,body,created_at,sender_id,profiles:sender_id(username,display_name)").eq("group_id",groupId).order("created_at",{ascending:true}).limit(200);
+    const {data,error}=await client.from("group_chat_messages").select("id,body,created_at,sender_id").eq("group_id",groupId).order("created_at",{ascending:true}).limit(200);
     if(error)return {ok:false,message:error.message};
-    return {ok:true,messages:(data||[]).map(m=>({...m,sender_name:m.profiles?.display_name||m.profiles?.username||"Member",sender_username:m.profiles?.username||""}))};
+    const ids=[...new Set((data||[]).map(m=>m.sender_id))];
+    const {data:profiles}=ids.length?await client.from("profiles").select("id,username,display_name").in("id",ids):{data:[]};
+    const byId=new Map((profiles||[]).map(p=>[p.id,p]));
+    return {ok:true,messages:(data||[]).map(m=>({...m,sender_name:byId.get(m.sender_id)?.display_name||byId.get(m.sender_id)?.username||"Member",sender_username:byId.get(m.sender_id)?.username||""}))};
   }
   async function sendGroupMessage(groupId, body) {
     if(!signedInUser)return {ok:false,message:"Sign in to send messages."};
