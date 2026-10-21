@@ -388,14 +388,26 @@
     busy = true;
     const button = mediaType === "text" ? $("blogPublish") : $("publishPost");
     if (button) { button.disabled = true; button.dataset.originalText ||= button.textContent; button.textContent = "Publishing…"; }
+    const status = $("studioStatus");
+    const oldStatus = status?.textContent || "";
+    if (status && mediaType !== "text") status.textContent = "Preparing your post…";
     let path = null;
     let postCreated = false;
     try {
+      // The posts.user_id foreign key requires a profile row. Ensure it exists
+      // before spending time uploading a large file.
+      try {
+        await ensureProfile(signedInUser);
+      } catch (profileError) {
+        throw new Error("Your Acoulys profile could not be prepared: " + (profileError?.message || "profile setup failed"));
+      }
       if (blob) {
+        if (status && mediaType !== "text") status.textContent = "Uploading your media…";
         const ext = (fileName.split(".").pop() || ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "video/mp4":"mp4", "audio/mpeg":"mp3" }[blob.type] || blob.type.split("/")[1] || "bin")).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "bin";
         path = signedInUser.id + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 9) + "." + ext;
         await uploadMediaToCloud(path, blob, button);
       }
+      if (status && mediaType !== "text") status.textContent = "Saving your post…";
       const row = { user_id: signedInUser.id, caption: String(caption || "").trim(), media_path: path, media_type: mediaType, visibility: "public" };
       const { data, error } = await client.from("posts").insert(row).select("id").single();
       if (error) throw error;
@@ -423,6 +435,7 @@
         return true;
       }
       const message = error?.message || "Publishing failed.";
+      if (status && mediaType !== "text") status.textContent = "Publish failed: " + message;
       console.error("Acoulys backend setup hint:", message);
       if (/relation .* does not exist|column .* does not exist|schema cache|could not find the .* table/i.test(message)) {
         say("Acoulys database is not set up yet. Run the complete backend/setup.sql file in Supabase SQL Editor, then refresh.");
