@@ -281,25 +281,22 @@ create index if not exists group_chat_messages_group_created_idx on public.group
 alter table public.group_chats enable row level security;
 alter table public.group_chat_members enable row level security;
 alter table public.group_chat_messages enable row level security;
+create or replace function public.is_group_chat_member(target_group uuid, target_user uuid default auth.uid())
+returns boolean language sql stable security definer set search_path = public
+as $$ select exists (select 1 from public.group_chat_members m where m.group_id = target_group and m.user_id = target_user); $$;
 drop policy if exists "members can read their group chats" on public.group_chats;
-create policy "members can read their group chats" on public.group_chats for select to authenticated using (
-  exists (select 1 from public.group_chat_members m where m.group_id = id and m.user_id = auth.uid())
-);
+create policy "members can read their group chats" on public.group_chats for select to authenticated using (public.is_group_chat_member(group_chats.id));
 drop policy if exists "signed-in users create group chats" on public.group_chats;
 create policy "signed-in users create group chats" on public.group_chats for insert to authenticated with check (created_by = auth.uid());
 drop policy if exists "members can read group membership" on public.group_chat_members;
-create policy "members can read group membership" on public.group_chat_members for select to authenticated using (
-  exists (select 1 from public.group_chat_members mine where mine.group_id = group_id and mine.user_id = auth.uid())
-);
+create policy "members can read group membership" on public.group_chat_members for select to authenticated using (public.is_group_chat_member(group_chat_members.group_id));
 drop policy if exists "group creator adds members" on public.group_chat_members;
 create policy "group creator adds members" on public.group_chat_members for insert to authenticated with check (
-  user_id = auth.uid() or exists (select 1 from public.group_chats g where g.id = group_id and g.created_by = auth.uid())
+  user_id = auth.uid() or exists (select 1 from public.group_chats g where g.id = group_chat_members.group_id and g.created_by = auth.uid())
 );
 drop policy if exists "members can read group messages" on public.group_chat_messages;
-create policy "members can read group messages" on public.group_chat_messages for select to authenticated using (
-  exists (select 1 from public.group_chat_members m where m.group_id = group_id and m.user_id = auth.uid())
-);
+create policy "members can read group messages" on public.group_chat_messages for select to authenticated using (public.is_group_chat_member(group_chat_messages.group_id));
 drop policy if exists "members can send group messages" on public.group_chat_messages;
 create policy "members can send group messages" on public.group_chat_messages for insert to authenticated with check (
-  sender_id = auth.uid() and exists (select 1 from public.group_chat_members m where m.group_id = group_id and m.user_id = auth.uid())
+  sender_id = auth.uid() and public.is_group_chat_member(group_chat_messages.group_id)
 );
