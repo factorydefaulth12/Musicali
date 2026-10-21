@@ -26,6 +26,12 @@ create table if not exists public.posts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- Allow text-only community posts as well as media posts.
+-- CREATE TABLE IF NOT EXISTS does not update constraints on an existing project.
+alter table public.posts alter column media_path drop not null;
+alter table public.posts drop constraint if exists posts_media_type_check;
+alter table public.posts add constraint posts_media_type_check
+  check (media_type in ('image','video','audio','text'));
 create index if not exists posts_created_at_idx on public.posts(created_at desc);
 create index if not exists posts_user_created_idx on public.posts(user_id, created_at desc);
 
