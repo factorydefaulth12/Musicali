@@ -434,7 +434,10 @@
         say("Your post was published, but the feed could not refresh. Refresh Acoulys to see it.");
         return true;
       }
-      const message = error?.message || "Publishing failed.";
+      const detail = error?.originalResponse?.getBody?.() || error?.originalResponse?.getStatus?.() || error?.response?.statusText || error?.statusText || "";
+      const statusCode = error?.originalResponse?.getStatus?.() || error?.status || error?.statusCode || error?.response?.status;
+      const baseMessage = error?.message || "Publishing failed.";
+      const message = [statusCode ? "HTTP " + statusCode : "", baseMessage, detail && String(detail) !== baseMessage ? String(detail) : ""].filter(Boolean).join(" · ");
       if (status && mediaType !== "text") status.textContent = "Publish failed: " + message;
       console.error("Acoulys backend setup hint:", message);
       if (/relation .* does not exist|column .* does not exist|schema cache|could not find the .* table/i.test(message)) {
