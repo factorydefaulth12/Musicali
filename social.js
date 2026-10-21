@@ -332,7 +332,11 @@
     if (sessionError) throw sessionError;
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) throw new Error("Your sign-in session expired. Sign in again before uploading.");
-    const baseUrl = client.supabaseUrl.endsWith("/") ? client.supabaseUrl.slice(0, -1) : client.supabaseUrl;
+    const parsedSupabaseUrl = new URL(client.supabaseUrl);
+    if (parsedSupabaseUrl.protocol !== "https:" && parsedSupabaseUrl.hostname !== "localhost" && parsedSupabaseUrl.hostname !== "127.0.0.1") {
+      throw new Error("Secure upload blocked: the Supabase endpoint must use HTTPS. Check the Supabase Project URL in auth.js.");
+    }
+    const baseUrl = parsedSupabaseUrl.origin;
     await new Promise((resolve, reject) => {
       let upload;
       try {
@@ -434,10 +438,11 @@
         say("Your post was published, but the feed could not refresh. Refresh Acoulys to see it.");
         return true;
       }
-      const detail = error?.originalResponse?.getBody?.() || error?.originalResponse?.getStatus?.() || error?.response?.statusText || error?.statusText || "";
-      const statusCode = error?.originalResponse?.getStatus?.() || error?.status || error?.statusCode || error?.response?.status;
+      const responseBody = error?.originalResponse?.getBody?.() || error?.response?.data || error?.body || "";
+      const statusCode = error?.originalResponse?.getStatus?.() || error?.status || error?.statusCode || error?.response?.status || "";
       const baseMessage = error?.message || "Publishing failed.";
-      const message = [statusCode ? "HTTP " + statusCode : "", baseMessage, detail && String(detail) !== baseMessage ? String(detail) : ""].filter(Boolean).join(" · ");
+      const detail = typeof responseBody === "string" ? responseBody : JSON.stringify(responseBody);
+      const message = [statusCode ? "HTTP " + statusCode : "", baseMessage, detail && detail !== baseMessage ? detail : ""].filter(Boolean).join(" · ");
       if (status && mediaType !== "text") status.textContent = "Publish failed: " + message;
       console.error("Acoulys backend setup hint:", message);
       if (/relation .* does not exist|column .* does not exist|schema cache|could not find the .* table/i.test(message)) {
@@ -574,9 +579,56 @@
       }, 0);
     } else renderSignedOut();
   });
+
+  async function listGroups() {
+    if (!signedInUser) return {ok:false,message:"Sign in to use group chats."};
+    const {data: memberships,error} = await client.from("group_chat_members").select("group_id").eq("user_id",signedInUser.id);
+    if(error) return {ok:false,message:error.message};
+    const ids=(memberships||[]).map(x=>x.group_id);
+    if(!ids.length) return {ok:true,groups:[]};
+    const {data:groups,error:groupError}=await client.from("group_chats").select("id,name,created_at").in("id",ids).order("created_at",{ascending:false});
+    if(groupError) return {ok:false,message:groupError.message};
+    const {data:members}=await client.from("group_chat_members").select("group_id").in("group_id",ids);
+    return {ok:true,groups:(groups||[]).map(g=>({...g,member_count:(members||[]).filter(m=>m.group_id===g.id).length}))};
+  }
+  async function createGroup(name, memberNames) {
+    if(!signedInUser) return {ok:false,message:"Sign in first to create a group."};
+    const cleanName=String(name||"").trim();
+    if(!cleanName||cleanName.length>70) return {ok:false,message:"Give your group a name (1 to 70 characters)."};
+    const names=[...new Set(String(memberNames||"").split(",").map(n=>n.trim().replace(/^@/,"").toLowerCase()).filter(Boolean))];
+    if(names.length>30) return {ok:false,message:"A group can add up to 30 other members at once."};
+    let memberIds=[signedInUser.id];
+    if(names.length){
+      const {data:profiles,error}=await client.from("profiles").select("id,username").in("username",names);
+      if(error)return {ok:false,message:error.message};
+      const found=new Map((profiles||[]).map(p=>[p.username.toLowerCase(),p]));
+      const missing=names.filter(n=>!found.has(n));
+      if(missing.length)return {ok:false,message:"Username(s) not found: "+missing.join(", ")};
+      memberIds.push(...[...found.values()].map(p=>p.id).filter(id=>id!==signedInUser.id));
+    }
+    const {data:group,error}=await client.from("group_chats").insert({name:cleanName,created_by:signedInUser.id}).select("id").single();
+    if(error)return {ok:false,message:error.message};
+    const {error:membersError}=await client.from("group_chat_members").insert([...new Set(memberIds)].map(user_id=>({group_id:group.id,user_id})));
+    if(membersError)return {ok:false,message:"Group created, but members could not be added: "+membersError.message};
+    return {ok:true,message:"Group created!",groupId:group.id};
+  }
+  async function listGroupMessages(groupId) {
+    if(!signedInUser)return {ok:false,message:"Sign in to read group messages."};
+    const {data,error}=await client.from("group_chat_messages").select("id,body,created_at,sender_id,profiles:sender_id(username,display_name)").eq("group_id",groupId).order("created_at",{ascending:true}).limit(200);
+    if(error)return {ok:false,message:error.message};
+    return {ok:true,messages:(data||[]).map(m=>({...m,sender_name:m.profiles?.display_name||m.profiles?.username||"Member",sender_username:m.profiles?.username||""}))};
+  }
+  async function sendGroupMessage(groupId, body) {
+    if(!signedInUser)return {ok:false,message:"Sign in to send messages."};
+    const clean=String(body||"").trim();
+    if(!clean||clean.length>4000)return {ok:false,message:"Messages must contain 1 to 4,000 characters."};
+    const {error}=await client.from("group_chat_messages").insert({group_id:groupId,sender_id:signedInUser.id,body:clean});
+    return error?{ok:false,message:error.message}:{ok:true};
+  }
+
   // Keep every route back to For You on the shared feed, not the old device-only feed.
   window.renderFeed = renderSocialFeed;
-  window.acoulysSocial = { refresh: () => loadSocialData(), publish: publishToCloud };
+  window.acoulysSocial = { refresh: () => loadSocialData(), publish: publishToCloud, listGroups, createGroup, listGroupMessages, sendGroupMessage };
   loadSocialData().catch(error => {
     console.error("Acoulys social startup failed:", error);
     const feed = $("feed");
