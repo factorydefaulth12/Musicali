@@ -323,7 +323,49 @@ $('pauseResume').onclick=()=>{if(!recorder||recorder.state==='inactive')return;i
 $('stopCapture').onclick=()=>{if(recorder&&recorder.state!=='inactive')recorder.stop();if(stream&&(!recorder||recorder.state==='inactive')){stopTracks();$('studioStatus').textContent='Camera and microphone stopped.'}else if(!stream)toast('Nothing is active right now.')};
 $('capturePhoto').onclick=()=>{if(!stream||!video.srcObject){toast('Start the camera first.');return}if(video.readyState<2||!video.videoWidth||!video.videoHeight){toast('Camera is still warming up. Wait a second and try the shutter again.');return}const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;const ctx=canvas.getContext('2d');if(!ctx){toast('Photo capture is unavailable in this browser.');return}try{ctx.filter=selectedFilter();ctx.drawImage(video,0,0,canvas.width,canvas.height);ctx.filter='none';canvas.toBlob(blob=>{if(!blob){toast('Could not capture photo. Try again.');return}recordedBlob=blob;if(recordedUrl)URL.revokeObjectURL(recordedUrl);recordedUrl=URL.createObjectURL(blob);$('downloadCapture').disabled=false;$('saveToLibrary').disabled=false;$('publishPost').disabled=false;$('studioStatus').textContent='Photo captured! Download it or save it to My Library on this device.';toast('Photo captured 📸')},'image/jpeg',.92)}catch(e){toast('Photo capture failed. Please reload the page and try again.')}};
 $('downloadCapture').onclick=()=>{if(!recordedBlob)return;const ext=recordedBlob.type.includes('audio')?'webm':recordedBlob.type.includes('image')?'jpg':recordedBlob.type.includes('mp4')?'mp4':'webm';const a=document.createElement('a');a.href=recordedUrl;a.download='musicali-creation.'+ext;a.click();toast('Media downloaded to your device.')};
-async function saveCurrentCreation(published){if(!recordedBlob)return toast('Create or import something first.');if(published){if(window.acoulysSocial?.publish){const ok=await window.acoulysSocial.publish({blob:recordedBlob,mediaType:recordedBlob.type?.startsWith('image/')?'image':recordedBlob.type?.startsWith('audio/')?'audio':'video',caption:$('postCaption').value.trim(),fileName:$('mediaImport')?.files?.[0]?.name||''});if(ok){closeStudio();renderFeed()}return ok}return toast('Community publishing is not connected yet. Nothing was posted. Refresh and try again.')}const item={id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:localProfileName(),author:localProfileName(),caption:$('postCaption').value.trim(),type:recordedBlob.type||'application/octet-stream',blob:recordedBlob,createdAt:Date.now(),draft:!published,published:!!published};const ok=await saveLibraryItem(item);if(ok){localCreations.unshift(item);$('studioStatus').textContent=published?'Published to your feed on this device only.':'Saved privately as a draft on this device.';toast(published?'Published to your feed on this device.':'Draft saved privately ✨');$('saveToLibrary').disabled=true;$('publishPost').disabled=true;if(published){closeStudio();renderFeed()}else if(currentPage==='Drafts'){closeStudio();renderPage('Drafts')}}else toast('Could not save. Your browser may be out of storage.')};$('saveToLibrary').onclick=()=>saveCurrentCreation(false);$('publishPost').onclick=()=>saveCurrentCreation(true);
+async function prepareMediaForPost(blob, aspect){
+  if(!blob) throw new Error("Choose a photo or video first.");
+  if(blob.type.startsWith("audio/")) return blob;
+  const dims={square:[1080,1080],portrait:[1080,1350],full:[1080,1920]};
+  const [outW,outH]=dims[aspect]||dims.square;
+  if(blob.type.startsWith("image/")){
+    const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("This image could not be opened."));img.src=URL.createObjectURL(blob)});
+    const canvas=document.createElement("canvas");canvas.width=outW;canvas.height=outH;
+    const ctx=canvas.getContext("2d");const scale=Math.max(outW/image.width,outH/image.height);
+    const sw=outW/scale,sh=outH/scale,sx=(image.width-sw)/2,sy=(image.height-sh)/2;
+    ctx.drawImage(image,sx,sy,sw,sh,0,0,outW,outH);
+    const result=await new Promise(resolve=>canvas.toBlob(resolve,blob.type==="image/png"?"image/png":"image/jpeg",.92));
+    if(!result) throw new Error("Could not prepare this image for the selected post format.");
+    return result;
+  }
+  if(blob.type.startsWith("video/")){
+    if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream) throw new Error("This browser cannot resize video for posting. Try a supported Chrome or Edge browser.");
+    const url=URL.createObjectURL(blob);
+    try{
+      const video=document.createElement("video");video.muted=false;video.playsInline=true;video.preload="auto";video.src=url;
+      await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(new Error("This video format could not be opened by your browser."))});
+      if(!Number.isFinite(video.duration)||video.duration<=0) throw new Error("This video has no readable duration.");
+      const canvas=document.createElement("canvas");canvas.width=outW;canvas.height=outH;
+      const ctx=canvas.getContext("2d");const stream=canvas.captureStream(30);
+      const sourceStream=video.captureStream?video.captureStream():video.mozCaptureStream?video.mozCaptureStream():null;
+      if(sourceStream) sourceStream.getAudioTracks().forEach(track=>stream.addTrack(track));
+      const mime=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find(type=>MediaRecorder.isTypeSupported(type))||"";
+      const recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:5000000}:undefined);
+      const chunks=[];recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+      const finished=new Promise((resolve,reject)=>{recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||"video/webm"}));recorder.onerror=()=>reject(new Error("Video processing failed. Try a shorter clip."))});
+      const draw=()=>{if(video.paused||video.ended)return;const scale=Math.max(outW/video.videoWidth,outH/video.videoHeight);const sw=outW/scale,sh=outH/scale;ctx.drawImage(video,(video.videoWidth-sw)/2,(video.videoHeight-sh)/2,sw,sh,0,0,outW,outH);requestAnimationFrame(draw)};
+      await video.play();recorder.start(250);draw();
+      await new Promise(resolve=>{video.onended=resolve});
+      if(recorder.state!=="inactive") recorder.stop();
+      const result=await finished;
+      stream.getTracks().forEach(track=>track.stop());
+      if(!result.size) throw new Error("Video processing produced an empty file.");
+      return result;
+    }finally{URL.revokeObjectURL(url)}
+  }
+  throw new Error("Choose an image, video, or audio file.");
+}
+async function saveCurrentCreation(published){if(!recordedBlob)return toast('Create or import something first.');if(published){if(window.acoulysSocial?.publish){const publishButton=$('publishPost');publishButton.disabled=true;publishButton.textContent='Preparing media…';$('studioStatus').textContent='Preparing your media for the selected format…';try{const original=recordedBlob;const prepared=await prepareMediaForPost(original,$('postAspect')?.value||'square');const mediaType=prepared.type?.startsWith('image/')?'image':prepared.type?.startsWith('audio/')?'audio':'video';const filename=$('mediaImport')?.files?.[0]?.name||'creation';const ext=mediaType==='image'?(prepared.type.includes('png')?'png':'jpg'):mediaType==='video'?'webm':(filename.split('.').pop()||'mp3');const ok=await window.acoulysSocial.publish({blob:prepared,mediaType,caption:$('postCaption').value.trim(),fileName:filename.replace(/\.[^.]+$/,'')+'.'+ext});if(ok){closeStudio();renderFeed()}return ok}catch(error){$('studioStatus').textContent='Could not prepare media: '+(error.message||'unknown error');toast('Could not prepare media: '+(error.message||'unknown error'));return false}finally{publishButton.disabled=false;publishButton.textContent='✦ Publish to my feed'}}return toast('Community publishing is not connected yet. Nothing was posted. Refresh and try again.')}const item={id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:localProfileName(),author:localProfileName(),caption:$('postCaption').value.trim(),type:recordedBlob.type||'application/octet-stream',blob:recordedBlob,createdAt:Date.now(),draft:!published,published:!!published};const ok=await saveLibraryItem(item);if(ok){localCreations.unshift(item);$('studioStatus').textContent=published?'Published to your feed on this device only.':'Saved privately as a draft on this device.';toast(published?'Published to your feed on this device.':'Draft saved privately ✨');$('saveToLibrary').disabled=true;$('publishPost').disabled=true;if(published){closeStudio();renderFeed()}else if(currentPage==='Drafts'){closeStudio();renderPage('Drafts')}}else toast('Could not save. Your browser may be out of storage.')};$('saveToLibrary').onclick=()=>saveCurrentCreation(false);$('publishPost').onclick=()=>saveCurrentCreation(true);
 window.acoulysGetCurrentCreation=()=>({blob:recordedBlob,fileName:$('mediaImport')?.files?.[0]?.name||'',caption:$('postCaption')?.value||''});
 $('mediaImport').onchange=e=>{const file=e.target.files&&e.target.files[0];if(!file)return;recordedBlob=file;if(recordedUrl)URL.revokeObjectURL(recordedUrl);recordedUrl=URL.createObjectURL(file);$('downloadCapture').disabled=false;$('saveToLibrary').disabled=false;$('publishPost').disabled=false;$('studioStatus').textContent='Selected: '+file.name+' ('+Math.max(1,Math.round(file.size/1024))+' KB). Ready to publish.';if(file.type.startsWith('video/')){stopTracks();video.srcObject=null;video.src=recordedUrl;video.controls=true;video.style.display='block';audio.style.display='none';video.load()}else if(file.type.startsWith('audio/')){audio.src=recordedUrl;audio.style.display='block';video.style.display='none';audio.load()}else{video.style.display='none';audio.style.display='none';let preview=$('imageImportPreview');if(!preview){preview=document.createElement('img');preview.id='imageImportPreview';preview.alt='Selected image preview';preview.style.cssText='display:block;max-width:100%;max-height:360px;object-fit:contain;margin:12px auto;border-radius:14px';$('studioStatus').insertAdjacentElement('afterend',preview)}preview.src=recordedUrl;preview.style.display='block';$('studioStatus').textContent='Photo selected: '+file.name+' ('+Math.max(1,Math.round(file.size/1024))+' KB). Ready to publish.'}toast('Media selected and ready. Choose Publish to my feed to post it.')};
 
@@ -402,7 +444,7 @@ if ("serviceWorker" in navigator) {
     auth.src = "auth.js?v=20261020-social-1";
     auth.onload = function () {
       const social = document.createElement("script");
-      social.src = "social.js?v=20261021-social-12";
+      social.src = "social.js?v=20261021-social-13";
       social.onerror = function () {
         console.error("Acoulys social features could not load. Refresh and try again.");
       };
