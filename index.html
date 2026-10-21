@@ -138,7 +138,7 @@
 #studioPanel .studio-action-secondary{background:#fff;border:1px solid #e5dced;color:#51485d}
 #studioPanel .studio-action-publish:disabled{opacity:.48}
 #studioPanel .studio-footnote{color:#8a8294;font-size:11px;margin-bottom:0}
-#studioPanel .studio-main-camera{grid-column:2;grid-row:1;min-width:0}
+#studioPanel .studio-camera-column{grid-column:2;grid-row:1;min-width:0};display:block
 #studioPanel .studio-viewfinder-frame{height:min(47vh,460px);min-height:280px;border-radius:20px}
 #studioPanel .studio-capture-controls{padding:14px 8px}
 #studioPanel .studio-mode-selector{gap:7px;flex-wrap:wrap}
@@ -149,7 +149,7 @@
 @media(max-width:760px){
  #studioPanel .studio-workspace{display:flex;flex-direction:column;padding:12px;gap:14px}
  #studioPanel .studio-side-panel{order:0;width:100%;padding:17px;border-radius:18px}
- #studioPanel .studio-main-camera{order:1;width:100%}
+ #studioPanel .studio-camera-column{order:1;width:100%}
  #studioPanel .studio-viewfinder-frame{height:36vh;min-height:220px;max-height:340px}
  #studioPanel .studio-action-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
  #studioPanel #publishPost{grid-column:1/-1}
