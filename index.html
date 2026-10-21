@@ -155,14 +155,40 @@
  #studioPanel #publishPost{grid-column:1/-1}
  #studioPanel .studio-side-heading h2{font-size:22px}
 }
+
+/* Compact, collapsible navigation: the feed gets the space, not filler */
+.sidebar{transition:width .2s ease,padding .2s ease;position:sticky}
+.sidebar-collapse{align-self:flex-end;width:30px;height:30px;border-radius:9px;background:transparent;color:var(--muted);font-size:23px;line-height:1}
+.sidebar-collapse:hover,.sidebar-mobile-toggle:hover{background:var(--panel2);color:var(--text)}
+.sidebar-collapsed .layout{grid-template-columns:76px minmax(0,1fr) 280px}
+.sidebar-collapsed .sidebar{padding:20px 10px}
+.sidebar-collapsed .brand{font-size:0;letter-spacing:0;margin:8px 0 14px;text-align:center}
+.sidebar-collapsed .brand:after{content:"A";font-size:24px;letter-spacing:0;color:var(--accent1)}
+.sidebar-collapsed .tag,.sidebar-collapsed .nav button span,.sidebar-collapsed .profile-mini-copy,.sidebar-collapsed .profile-edit-trigger{display:none}
+.sidebar-collapsed .nav button{justify-content:center;padding:13px 5px;font-size:18px}
+.sidebar-collapsed .profile-mini{justify-content:center;padding:6px}
+.sidebar-mobile-toggle{display:none;flex-shrink:0;border-radius:10px;padding:9px 12px;background:var(--panel);border:1px solid var(--line)}
+@media(max-width:1100px){.sidebar-collapsed .layout{grid-template-columns:76px minmax(0,1fr)}}
+@media(max-width:700px){
+ .sidebar-mobile-toggle{display:block}
+ .sidebar{display:flex;position:fixed;z-index:30;left:0;top:0;bottom:0;width:min(290px,85vw);height:100dvh;background:var(--bg);box-shadow:20px 0 60px #0005;transform:translateX(-110%);transition:transform .2s ease;padding:22px 16px}
+ .sidebar.mobile-open{transform:translateX(0)}
+ .sidebar-collapsed .sidebar{width:min(290px,85vw);padding:22px 16px}
+ .sidebar-collapsed .brand{font-size:27px;letter-spacing:3px;margin:0 12px 5px}
+ .sidebar-collapsed .brand:after{display:none}
+ .sidebar-collapsed .tag,.sidebar-collapsed .nav button span,.sidebar-collapsed .profile-mini-copy,.sidebar-collapsed .profile-edit-trigger{display:initial}
+ .sidebar-collapsed .nav button{justify-content:flex-start;padding:12px 14px;font-size:14px}
+ .sidebar-collapsed .profile-mini{justify-content:flex-start;padding:12px}
+ .sidebar-collapse{position:absolute;right:12px;top:12px}
+}
 </style>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar"><div class="brand">ACOULYS</div><div class="tag">MAKE IT. LOOP IT. SHARE IT.</div><nav class="nav" id="nav">
+<aside class="sidebar" id="acoulysSidebar"><button class="sidebar-collapse" id="sidebarCollapse" aria-label="Collapse navigation" title="Collapse navigation">‹</button><div class="brand">ACOULYS</div><div class="tag">MAKE IT. LOOP IT. SHARE IT.</div><nav class="nav" id="nav">
 <button class="active" data-page="For You">✦ <span>For You</span></button><button data-page="Drafts">▤ <span>Drafts</span></button><button data-page="Discover">⌕ <span>Discover</span></button><button data-page="Watch">▷ <span>Watch</span></button><button data-page="Listen">♫ <span>Listen</span></button><button data-page="Blogs">✎ <span>Blogs</span></button><button data-page="Create">＋ <span>Create</span></button><button data-page="Stories">◉ <span>Stories</span></button><button data-page="Messages">✉ <span>Messages</span></button><button data-page="Library">▤ <span>My Library</span></button>
 </nav><div class="side-bottom"><div class="profile-mini profile-edit-card"><button class="profile-photo-button" id="profilePhotoButton" title="Change profile picture" aria-label="Change profile picture"><span class="avatar profile-avatar">V</span><span class="profile-photo-plus">＋</span></button><div class="profile-mini-copy"><strong id="profileDisplayName" style="font-size:12px">Your profile</strong><div class="muted" id="profileDisplaySub">Make it yours ✦</div></div><button class="profile-edit-trigger" id="profileEditButton" title="Edit profile" aria-label="Edit profile">✎</button><input id="profilePhotoInput" type="file" accept="image/*" hidden></div></div></aside>
-<main class="main"><header class="topbar"><div class="search">⌕ <input id="search" placeholder="Search creators, songs, videos..."></div><button class="pill" id="themeToggle" title="Switch between light and dark appearance">☀ Light mode</button><button class="pill" id="themeOpen" title="Choose your colours">🎨 Colours</button><button class="pill" id="notificationsBtn" title="Enable notifications">♧ Notifications</button><button class="gradient-btn" id="createTop">＋ Create</button></header>
+<main class="main"><header class="topbar"><button class="sidebar-mobile-toggle" id="sidebarMobileToggle" aria-label="Open navigation" title="Open navigation">☰</button><div class="search">⌕ <input id="search" placeholder="Search creators, songs, videos..."></div><button class="pill" id="themeToggle" title="Switch between light and dark appearance">☀ Light mode</button><button class="pill" id="themeOpen" title="Choose your colours">🎨 Colours</button><button class="pill" id="notificationsBtn" title="Enable notifications">♧ Notifications</button><button class="gradient-btn" id="createTop">＋ Create</button></header>
 <div id="appView" style="display:none"></div>
 <section class="hero" data-home-section><div class="eyebrow">SOUNDS · CLIPS · CHALLENGES</div><h1>Your next loop starts here.</h1><p>Find a sound, make a short video, try a challenge, and put your own spin on it. Your creations are saved in this browser for now.</p><div class="hero-actions"><button class="gradient-btn" id="createTopHero">＋ Start a post</button><button class="pill" id="cameraTop">◎ Open camera</button></div></section>
 <section data-home-section><button class="blog-compose-trigger" id="homeBlogCompose"><span class="avatar profile-avatar">V</span><span><strong>Got something to share?</strong><small>Post a thought, start a story, or head to the camera studio.</small></span><span style="font-size:22px;color:var(--accent1)">＋</span></button><div class="section-head"><h2 id="feedTitle">Fresh from the feed</h2><span class="muted">Clips, sounds & creator moments</span></div><div class="feed-tabs" id="tabs"><button class="active" data-filter="All">For You</button><button data-filter="Video">Videos</button><button data-filter="Audio">Sounds</button><button data-filter="Photo">Photos</button><button data-filter="Blog">Posts</button></div></section>
@@ -444,7 +470,7 @@ if ("serviceWorker" in navigator) {
     auth.src = "auth.js?v=20261020-social-1";
     auth.onload = function () {
       const social = document.createElement("script");
-      social.src = "social.js?v=20261021-social-13";
+      social.src = "social.js?v=20261021-social-14";
       social.onerror = function () {
         console.error("Acoulys social features could not load. Refresh and try again.");
       };
@@ -474,6 +500,17 @@ if ("serviceWorker" in navigator) {
     document.head.appendChild(script);
   }
   trySource(0);
+})();
+</script>
+<script>
+(()=> {
+ const sidebar=document.getElementById('acoulysSidebar');
+ const collapse=document.getElementById('sidebarCollapse');
+ const mobileToggle=document.getElementById('sidebarMobileToggle');
+ if(collapse) collapse.addEventListener('click',()=>{document.body.classList.toggle('sidebar-collapsed');const collapsed=document.body.classList.contains('sidebar-collapsed');collapse.textContent=collapsed?'›':'‹';collapse.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
+ if(mobileToggle&&sidebar) mobileToggle.addEventListener('click',()=>sidebar.classList.toggle('mobile-open'));
+ if(sidebar) sidebar.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>sidebar.classList.remove('mobile-open')));
+ document.addEventListener('click',event=>{if(sidebar&&sidebar.classList.contains('mobile-open')&&!sidebar.contains(event.target)&&event.target!==mobileToggle)sidebar.classList.remove('mobile-open')});
 })();
 </script>
 </body></html>
