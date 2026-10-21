@@ -10,6 +10,7 @@
   let remotePosts = [];
   let followedIds = new Set();
   let busy = false;
+  let pendingPublish = null;
   const socialStyle = document.createElement("style");
   socialStyle.textContent = ".social-media{margin-top:12px;min-width:0}.social-media img{width:100%;max-height:640px;object-fit:contain;border-radius:12px;background:#09070f}.social-media video{display:block;width:100%;max-height:640px;border-radius:12px;background:#09070f}.social-text-post{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:16px 2px;font-family:Georgia,serif;font-size:16px}.social-post .post-actions{align-items:center;flex-wrap:wrap}.social-post .post-actions button{padding:4px 0}.social-post .post-actions button:hover{color:var(--accent2)}";
   document.head.appendChild(socialStyle);
@@ -364,9 +365,22 @@
     });
   }
   async function publishToCloud({ blob = null, mediaType = "text", caption = "", fileName = "" }) {
-    if (busy) return;
+    if (busy) return false;
+    // Resolve the current session on demand. The studio can be used before the
+    // asynchronous initial feed load has finished.
     if (!signedInUser) {
-      say("Sign in to publish to the community.");
+      try {
+        const { data: authData, error: authError } = await client.auth.getUser();
+        if (authError) throw authError;
+        signedInUser = authData?.user || null;
+      } catch (authError) {
+        console.warn("Acoulys could not verify the publishing session:", authError);
+      }
+    }
+    if (!signedInUser) {
+      // Keep the selected Blob/caption in memory and resume after sign-in.
+      pendingPublish = { blob, mediaType, caption, fileName };
+      say("Sign in first. Acoulys will continue publishing your post after sign-in.");
       window.acoulysAuth?.open();
       return false;
     }
@@ -529,8 +543,20 @@
   // A signed-in session can publish, and the feed refreshes after auth changes.
   client.auth.onAuthStateChange((_event, session) => {
     signedInUser = session?.user || null;
-    if (signedInUser) window.setTimeout(() => loadSocialData().catch(error => { console.error("Acoulys feed load failed:", error); say("Couldn't load the shared feed. Check the social migration and Supabase connection."); }), 0);
-    else renderSignedOut();
+    if (signedInUser) {
+      window.setTimeout(() => {
+        const queued = pendingPublish;
+        pendingPublish = null;
+        loadSocialData().catch(error => {
+          console.error("Acoulys feed load failed:", error);
+          say("Couldn't refresh the feed: " + (error?.message || "unknown error"));
+        });
+        if (queued) publishToCloud(queued).catch(error => {
+          console.error("Queued Acoulys publish failed:", error);
+          say("Could not finish publishing: " + (error?.message || "unknown error"));
+        });
+      }, 0);
+    } else renderSignedOut();
   });
   // Keep every route back to For You on the shared feed, not the old device-only feed.
   window.renderFeed = renderSocialFeed;
