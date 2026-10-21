@@ -117,26 +117,41 @@
       console.warn("Acoulys feed loaded, but profile/like/comment details could not be refreshed:", enrichmentError);
     }
     followedIds = new Set();
-    if (authorIdsForProfiles.length) {
-      const [followingRes, followerRes] = await Promise.all([
-        client.from("follows").select("following_id").eq("follower_id", signedInUser.id).in("following_id", authorIdsForProfiles),
-        client.from("follows").select("following_id").in("following_id", authorIdsForProfiles)
-      ]);
-      if (followingRes.error) throw followingRes.error;
-      if (followerRes.error) throw followerRes.error;
-      (followingRes.data || []).forEach(row => followedIds.add(row.following_id));
-      const followerCounts = {};
-      (followerRes.data || []).forEach(row => { followerCounts[row.following_id] = (followerCounts[row.following_id] || 0) + 1; });
-      remotePosts.forEach(post => { post.followers_count = followerCounts[post.user_id] || 0; });
+    // Following data is optional UI enrichment. Missing policies/tables must not
+    // prevent the public posts themselves from rendering.
+    try {
+      if (authorIdsForProfiles.length) {
+        const [followingRes, followerRes] = await Promise.all([
+          client.from("follows").select("following_id").eq("follower_id", signedInUser.id).in("following_id", authorIdsForProfiles),
+          client.from("follows").select("following_id").in("following_id", authorIdsForProfiles)
+        ]);
+        if (followingRes.error) throw followingRes.error;
+        if (followerRes.error) throw followerRes.error;
+        (followingRes.data || []).forEach(row => followedIds.add(row.following_id));
+        const followerCounts = {};
+        (followerRes.data || []).forEach(row => { followerCounts[row.following_id] = (followerCounts[row.following_id] || 0) + 1; });
+        remotePosts.forEach(post => { post.followers_count = followerCounts[post.user_id] || 0; });
+      }
+    } catch (followError) {
+      console.warn("Acoulys feed loaded without follow details:", followError);
     }
-    if (postIdsForCounts.length) {
-      const { data: likes, error: likesError } = await client.from("likes").select("post_id").eq("user_id", signedInUser.id).in("post_id", postIdsForCounts);
-      if (likesError) throw likesError;
-      const likedIds = new Set((likes || []).map(row => row.post_id));
-      remotePosts.forEach(post => { post.viewer_liked = likedIds.has(post.id); });
+    // Viewer-specific like state is also optional. Counts and posts are already loaded.
+    try {
+      if (postIdsForCounts.length) {
+        const { data: likes, error: likesError } = await client.from("likes").select("post_id").eq("user_id", signedInUser.id).in("post_id", postIdsForCounts);
+        if (likesError) throw likesError;
+        const likedIds = new Set((likes || []).map(row => row.post_id));
+        remotePosts.forEach(post => { post.viewer_liked = likedIds.has(post.id); });
+      }
+    } catch (viewerLikesError) {
+      console.warn("Acoulys feed loaded without your like state:", viewerLikesError);
     }
     await renderSocialFeed();
-    await renderOwnStats();
+    try {
+      await renderOwnStats();
+    } catch (statsError) {
+      console.warn("Acoulys feed loaded, but profile stats failed:", statsError);
+    }
   }
   function renderSignedOut() {
     const feed = $("feed");
@@ -192,7 +207,10 @@
       $("socialCreate")?.addEventListener("click", () => window.openStudio ? window.openStudio("Create a video or photo") : document.querySelector('[data-page="Create"]')?.click());
       return;
     }
-    const signedUrls = await Promise.all(posts.map(mediaUrl));
+    const signedUrls = await Promise.all(posts.map(post => mediaUrl(post).catch(error => {
+      console.warn("Acoulys could not prepare media URL for post:", post.id, error);
+      return "";
+    })));
     const cards = posts.map((post, i) => {
       const profile = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
       const name = profile?.display_name || profile?.username || "Acoulys creator";
